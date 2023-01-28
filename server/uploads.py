@@ -343,11 +343,11 @@ def upload(model_name, dataframe, field_mapping, value_mapping, extra_default_fi
             t(row)
     data_ob = [flatten_json.unflatten_list(row, '.') for row in data_ob]
     with transaction.atomic():
-        to_save = OrderedDict()
-        to_save_fk = OrderedDict()
+        independent_and_1to1_models = OrderedDict()
+        foreign_key_models = OrderedDict()
         for i, d in enumerate(tqdm(data_ob, ascii=True, desc='prep inserts')):
-            build_models_to_save(model_name, d[model_name], to_save, to_save_fk)
-        products = save_model_builds(to_save, to_save_fk)
+            build_model_kwarg_groups(model_name, d[model_name], independent_and_1to1_models, foreign_key_models)
+        products = save_model_kwarg_groups(independent_and_1to1_models, foreign_key_models)
     prod_ids = []
     internal_ids = []
     for p in products:
@@ -371,74 +371,65 @@ def django_model(model_name):
     return apps.get_model('server', model_name)
 
 
-def save_model_from_dict(model_name: str, d: dict):
-    fk_objs = {}
-    kwargs = {}
-    for k, v in d.items():
-        if isinstance(v, list):
-            fk_objs[k] = v
-        elif isinstance(v, dict):
-            kwargs[k] = save_model_from_dict(k, v)
-        else:
-            kwargs[k] = v
-    try:
-        new_model = django_model(model_name)(**kwargs)
-        new_model.full_clean()
-        new_model.save()
-    except (TypeError, utils.IntegrityError, exceptions.ValidationError) as e:
-        print(e)
-        import pdb
-        pdb.set_trace()
-        print('A validation error occured!')
-        raise e
-    for k, v in fk_objs.items():
-        fk_name = model_name
-        if hasattr(django_model(k), 'Product'):
-            fk_name = 'Product'
-        for m in v:
-            m[fk_name] = new_model
-            save_model_from_dict(k, m)
-    return new_model
-
-
-def build_models_to_save(model_name, d: dict, to_save: OrderedDict, to_save_fk: OrderedDict, from_fk_rel=False):
+def build_model_kwarg_groups(model_name, d: dict, independent_and_1to1_models: OrderedDict, foreign_key_models: OrderedDict, from_fk_rel=False):
     fk_objs = {}
     kwargs = dict(_1to1_related=[])
     for k, v in d.items():
         if isinstance(v, list):
             fk_objs[k] = v
         elif isinstance(v, dict):
-            kwargs['_1to1_related'].append((k, build_models_to_save(k, v, to_save, to_save_fk)))
+            kwargs['_1to1_related'].append((k, build_model_kwarg_groups(k, v, independent_and_1to1_models, foreign_key_models)))
         else:
             kwargs[k] = v
     if from_fk_rel:
-        if model_name not in to_save_fk:
-            to_save_fk[model_name] = OrderedDict()
-        instance_id = f'{model_name}{len(to_save_fk[model_name].keys())}'
-        to_save_fk[model_name][instance_id] = kwargs
+        if model_name not in foreign_key_models:
+            foreign_key_models[model_name] = OrderedDict()
+        instance_id = f'{model_name}{len(foreign_key_models[model_name].keys())}'
+        foreign_key_models[model_name][instance_id] = kwargs
     else:
-        if model_name not in to_save:
-            to_save[model_name] = OrderedDict()
-        instance_id = f'{model_name}{len(to_save[model_name].keys())}'
-        to_save[model_name][instance_id] = kwargs
+        if model_name not in independent_and_1to1_models:
+            independent_and_1to1_models[model_name] = OrderedDict()
+        instance_id = f'{model_name}{len(independent_and_1to1_models[model_name].keys())}'
+        independent_and_1to1_models[model_name][instance_id] = kwargs
     for k, v in fk_objs.items():
         for o in v:
             o['_1toM_related'] = model_name, instance_id, from_fk_rel
-            build_models_to_save(k, o, to_save, to_save_fk, from_fk_rel=True)
+            build_model_kwarg_groups(k, o, independent_and_1to1_models, foreign_key_models, from_fk_rel=True)
     return instance_id
 
 
-def save_model_builds(to_save: OrderedDict, to_save_fk: OrderedDict):
+def save_model_kwarg_groups(independent_and_1to1_models: OrderedDict, foreign_key_models: OrderedDict):
     products = []
-    for model_name, info in tqdm(to_save.items(), ascii=True, desc='insert independent and 1to1'):
+
+    def resolve_relations(info, has_1toM=False):
         for kwargs in info.values():
             for model_name_rel, instance_id_rel in kwargs.pop('_1to1_related'):
-                kwargs[model_name_rel] = to_save[model_name_rel][instance_id_rel]
+                kwargs[model_name_rel] = independent_and_1to1_models[model_name_rel][instance_id_rel]
+
+            if has_1toM:
+                model_name_rel, instance_id_rel, from_fk_rel = kwargs.pop('_1toM_related')
+                fk_name = model_name_rel
+                if hasattr(django_model(model_name), 'Product'):
+                    fk_name = 'Product'
+                saved = foreign_key_models if from_fk_rel else independent_and_1to1_models
+                kwargs[fk_name] = saved[model_name_rel][instance_id_rel]
+
+    def handle_insertions(model_name, info):
         d_model = django_model(model_name)
-        models_to_save = [d_model(**m) for m in info.values()]
+        models_to_save = []
+        for kwargs in tqdm(info.values(), ascii=True, desc=f'constructing/validating models ({model_name})'):
+            m = d_model(**kwargs)
+            try:
+                m.full_clean()
+            except exceptions.ValidationError as e:
+                import pdb
+                pdb.set_trace()
+                print(f'Validation error! {e}')
+                raise e
+            models_to_save.append(m)
         if is_multi_table_inheritance_model(d_model):
             saved_models = []
-            for m in tqdm(models_to_save, ascii=True, desc=f'multi-table model {model_name}: insert one by one'):
+            for m in tqdm(models_to_save, ascii=True, desc=f'multi-table model ({model_name}): insert one by one'):
                 m.save()
                 saved_models.append(m)
         else:
@@ -447,29 +438,15 @@ def save_model_builds(to_save: OrderedDict, to_save_fk: OrderedDict):
             info[instance_id] = model
             if hasattr(model, 'ProdID_Value'):
                 products.append(model)
-    for model_name, info in tqdm(to_save_fk.items(), ascii=True, desc='insert 1toM'):
-        for kwargs in info.values():
-            model_name_rel, instance_id_rel, from_fk_rel = kwargs.pop('_1toM_related')
-            fk_name = model_name_rel
-            if hasattr(django_model(model_name), 'Product'):
-                fk_name = 'Product'
-            saved = to_save_fk if from_fk_rel else to_save
-            kwargs[fk_name] = saved[model_name_rel][instance_id_rel]
-            for model_name_rel, instance_id_rel in kwargs.pop('_1to1_related'):
-                kwargs[model_name_rel] = to_save[model_name_rel][instance_id_rel]
-        d_model = django_model(model_name)
-        models_to_save = [d_model(**m) for m in info.values()]
-        if is_multi_table_inheritance_model(d_model):
-            saved_models = []
-            for m in tqdm(models_to_save, ascii=True, desc=f'multi-table model {model_name}: insert one by one'):
-                m.save()
-                saved_models.append(m)
-        else:
-            saved_models = d_model.objects.bulk_create(models_to_save)
-        for instance_id, model in zip(info.keys(), saved_models):
-            info[instance_id] = model
-            if hasattr(model, 'ProdID_Value'):
-                products.append(model)
+
+    for model_name, info in tqdm(independent_and_1to1_models.items(), ascii=True, desc='insert independent and 1to1'):
+        resolve_relations(info)
+        handle_insertions(model_name, info)
+
+    for model_name, info in tqdm(foreign_key_models.items(), ascii=True, desc='insert 1toM'):
+        resolve_relations(info, has_1toM=True)
+        handle_insertions(model_name, info)
+
     return products
 
 
