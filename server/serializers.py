@@ -16,6 +16,8 @@ def get_values_by_ids(name, ids):
 
 def serialize_by_ids(name, ids):
     result_values_map = get_values_by_ids(name, ids)
+    if obit.get_schema_type(name) is obit.OBType.Element:
+        return result_values_map
     objects = obit.objects_of_ob_object(name)
     arrays = obit.arrays_of_ob_object(name)
     superclass = obit.get_schema_superclass(name)
@@ -23,24 +25,24 @@ def serialize_by_ids(name, ids):
         objects += obit.objects_of_ob_object(superclass)
         arrays += obit.arrays_of_ob_object(superclass)
     object_values_map = {}
-    array_values_map = {(plural, singular): get_values_by_ids(singular, result_values_map.keys()) for plural, singular in arrays}
     for v in result_values_map.values():
         for o in objects:
             if o not in object_values_map:
                 object_values_map[o] = []
             object_values_map[o].append(v[o]['id'])
-    for o, v in object_values_map.items():
-        object_values_map[o] = get_values_by_ids(o, v)
-    for o in result_values_map.values():
-        for o_1to1 in objects:
-            o[o_1to1] = object_values_map[o_1to1][o[o_1to1]['id']]
-    for (plural, singular), os in array_values_map.items():
-        for o in os.values():
-            fk_id = o[name if superclass is None else superclass]['id']
-            if plural not in result_values_map[fk_id]:
-                result_values_map[fk_id][plural] = []
-            result_values_map[fk_id][plural].append(o)
-    return result_values_map.values()
+        for plural, _ in arrays:
+            v[plural] = []
+    for o, ids in object_values_map.items():
+        object_values_map[o] = serialize_by_ids(o, ids)
+    array_values_map = {plural: serialize_by_ids(singular, result_values_map.keys()) for plural, singular in arrays}
+    for v in result_values_map.values():
+        for o in objects:
+            v[o] = object_values_map[o][v[o]['id']]
+    for plural, vs in array_values_map.items():
+        for v in vs.values():
+            fk_id = v[name if superclass is None else superclass]['id']
+            result_values_map[fk_id][plural].append(v)
+    return result_values_map
 
 
 class SerializerMetaclass(serializers.SerializerMetaclass):
