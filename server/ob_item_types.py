@@ -34,6 +34,10 @@ class TaxonomyElement(enum.Enum):
     Integer = 'TaxonomyElementInteger'
     Number = 'TaxonomyElementNumber'
     String = 'TaxonomyElementString'
+    ArrayBoolean = 'TaxonomyElementArrayBoolean'
+    ArrayInteger = 'TaxonomyElementArrayInteger'
+    ArrayNumber = 'TaxonomyElementArrayNumber'
+    ArrayString = 'TaxonomyElementArrayString'
 
 
 class Primitive(enum.Enum):
@@ -363,11 +367,11 @@ def is_primitive(name):
 
 
 def get_schema_type(name):
-    if is_primitive(name):
+    if is_primitive(name) or name in {f'Value{t.name}' for t in TaxonomyElement}:
         return OBType.Primitive
     match get_schema_defn(name):
         case {'allOf': [{'$ref': ref}, _]}:
-            if get_ref_schema(ref) in tuple(t.value for t in TaxonomyElement):
+            if get_ref_schema(ref) in {t.value for t in TaxonomyElement}:
                 return OBType.Element
             return OBType.Object
         case {'type': 'object'}:

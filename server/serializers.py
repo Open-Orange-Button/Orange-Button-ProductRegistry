@@ -9,7 +9,7 @@ from server import ob_item_types as obit
 
 def get_values_by_ids(name, ids):
     return OrderedDict([
-        (o['id'], flatten_json.unflatten_list(o, '_'))
+        (o['id'], flatten_json.unflatten(o, '_'))
         for o in getattr(models, name).objects.filter(id__in=ids).values()
     ])
 
@@ -32,6 +32,9 @@ def serialize_by_ids(name, ids):
             object_values_map[o].append(v[o]['id'])
         for plural, _ in arrays:
             v[plural] = []
+        del v['id']
+        if superclass is not None:
+            del v[superclass.lower()]
     for o, ids in object_values_map.items():
         object_values_map[o] = serialize_by_ids(o, ids)
     array_values_map = {plural: serialize_by_ids(singular, result_values_map.keys()) for plural, singular in arrays}
@@ -39,9 +42,11 @@ def serialize_by_ids(name, ids):
         for o in objects:
             v[o] = object_values_map[o][v[o]['id']]
     for plural, vs in array_values_map.items():
+        fk_name = name if superclass is None else superclass
         for v in vs.values():
-            fk_id = v[name if superclass is None else superclass]['id']
+            fk_id = v[fk_name]['id']
             result_values_map[fk_id][plural].append(v)
+            del v[fk_name]
     return result_values_map
 
 

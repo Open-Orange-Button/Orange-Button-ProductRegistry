@@ -6296,9 +6296,6 @@
               "Grounding": {
                 "$ref": "#/components/schemas/Grounding"
               },
-              "Dimension": {
-                "$ref": "#/components/schemas/Dimension"
-              },
               "InverterEfficiency": {
                 "$ref": "#/components/schemas/InverterEfficiency"
               },

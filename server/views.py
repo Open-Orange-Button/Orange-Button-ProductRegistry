@@ -118,7 +118,10 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         products = models.Product.objects.values_list('id', flat=True)
         results_page = self.paginator.paginate_queryset(products, request)
-        return self.get_paginated_response(serializers.serialize_by_ids('ProdBattery', results_page))
+        results = OrderedDict()
+        for p in obit.get_schema_subclasses('Product'):
+            results.update(serializers.serialize_by_ids(p, results_page))
+        return self.get_paginated_response(results.values())
 
     def get_serializer_context(self):
         super_context = super().get_serializer_context()
