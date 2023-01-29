@@ -115,6 +115,11 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             return 'Product'
         return 'Products'
 
+    def list(self, request, *args, **kwargs):
+        products = models.Product.objects.values_list('id', flat=True)
+        results_page = self.paginator.paginate_queryset(products, request)
+        return self.get_paginated_response(serializers.serialize_products(results_page))
+
     def get_serializer_context(self):
         super_context = super().get_serializer_context()
         query_params = self.request.query_params

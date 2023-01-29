@@ -1,9 +1,43 @@
 from collections import OrderedDict
 
 from rest_framework import serializers
+import flatten_json
 
 from server import models
 from server import ob_item_types as obit
+
+
+def get_values_by_ids(model_name, ids):
+    return OrderedDict([
+        (o['id'], flatten_json.unflatten_list(o, '_'))
+        for o in getattr(models, model_name).objects.filter(id__in=ids).values()
+    ])
+
+
+def serialize_products(ids):
+    prodbattery_map = get_values_by_ids('ProdBattery', ids)
+    objects_1to1 = obit.objects_of_ob_object('ProdBattery') + obit.objects_of_ob_object('Product')
+    objects_1to1_ids_map = {}
+    product_objects_1toM = obit.arrays_of_ob_object('Product')
+    product_objects_1toM_ids_map = {plural: get_values_by_ids(singular, prodbattery_map.keys()) for plural, singular in product_objects_1toM}
+    for v in prodbattery_map.values():
+        for o in objects_1to1:
+            if o not in objects_1to1_ids_map:
+                objects_1to1_ids_map[o] = []
+            objects_1to1_ids_map[o].append(v[o]['id'])
+    for o, v in objects_1to1_ids_map.items():
+        objects_1to1_ids_map[o] = get_values_by_ids(o, v)
+    for o in prodbattery_map.values():
+        for o_1to1 in objects_1to1:
+            o[o_1to1] = objects_1to1_ids_map[o_1to1][o[o_1to1]['id']]
+    product_objects_1toM = obit.arrays_of_ob_object('Product')
+    for plural, os in product_objects_1toM_ids_map.items():
+        for o in os.values():
+            product_id = o['Product']['id']
+            if plural not in prodbattery_map[product_id]:
+                prodbattery_map[product_id][plural] = []
+            prodbattery_map[product_id][plural].append(o)
+    return prodbattery_map.values()
 
 
 class SerializerMetaclass(serializers.SerializerMetaclass):
