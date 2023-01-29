@@ -105,7 +105,6 @@ def build_subquery_info(data, info_dict, m, mp):
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = models.Product.objects.all()
-    serializer_class = serializers.Product
 
     def get_view_name(self):
         if self.detail:
