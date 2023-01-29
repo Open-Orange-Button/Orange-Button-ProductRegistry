@@ -296,10 +296,15 @@ def DesignQualificationCertificationOptionalSubmission(row):
         cert_type = f'{prefix}.CertificationTypeProduct_Value'
         row[cert_type] = 'IEC61215_2021'
 
+def RemoveExtremelyLargeCellStringsParallelQuantity(row):
+    key = 'ProdModule.CellStringsParallelQuantity_Value'
+    if row[key] is not None and row[key] > 1e18:
+        row[key] = None
 
 MODULE_ROW_SPECIFIC_TRANSFORMS = (
     SafetyCertificationDoubleUL,
-    DesignQualificationCertificationOptionalSubmission
+    DesignQualificationCertificationOptionalSubmission,
+    RemoveExtremelyLargeCellStringsParallelQuantity,
 )
 
 
@@ -342,11 +347,11 @@ def upload(model_name, dataframe, field_mapping, value_mapping, extra_default_fi
         for t in row_specific_transforms:
             t(row)
     data_ob = [flatten_json.unflatten_list(row, '.') for row in data_ob]
+    independent_and_1to1_models = OrderedDict()
+    foreign_key_models = OrderedDict()
+    for i, d in enumerate(tqdm(data_ob, ascii=True, desc='prep inserts')):
+        build_model_kwarg_groups(model_name, d[model_name], independent_and_1to1_models, foreign_key_models)
     with transaction.atomic():
-        independent_and_1to1_models = OrderedDict()
-        foreign_key_models = OrderedDict()
-        for i, d in enumerate(tqdm(data_ob, ascii=True, desc='prep inserts')):
-            build_model_kwarg_groups(model_name, d[model_name], independent_and_1to1_models, foreign_key_models)
         products = save_model_kwarg_groups(independent_and_1to1_models, foreign_key_models)
     prod_ids = []
     internal_ids = []
@@ -420,12 +425,17 @@ def save_model_kwarg_groups(independent_and_1to1_models: OrderedDict, foreign_ke
         for kwargs in tqdm(info.values(), ascii=True, desc=f'constructing/validating models ({model_name})'):
             m = d_model(**kwargs)
             try:
-                m.full_clean()
+                m.clean_fields()
             except exceptions.ValidationError as e:
                 import pdb
                 pdb.set_trace()
                 print(f'Validation error! {e}')
-                raise e
+                print('You may try to fix to value in PDB. Be sure to add the change to the code so that it will be handled automatically next time!')
+                recovered = False
+                if recovered:
+                    m.clean_fields()
+                else:
+                    raise e
             models_to_save.append(m)
         if is_multi_table_inheritance_model(d_model):
             saved_models = []
@@ -433,7 +443,9 @@ def save_model_kwarg_groups(independent_and_1to1_models: OrderedDict, foreign_ke
                 m.save()
                 saved_models.append(m)
         else:
-            saved_models = d_model.objects.bulk_create(models_to_save)
+            current_ids = tuple(d_model.objects.values_list('id', flat=True))
+            d_model.objects.bulk_create(models_to_save)
+            saved_models = d_model.objects.exclude(id__in=current_ids)
         for instance_id, model in zip(info.keys(), saved_models):
             info[instance_id] = model
             if hasattr(model, 'ProdID_Value'):
