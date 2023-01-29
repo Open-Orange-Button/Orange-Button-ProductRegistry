@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_mysql',
     'rest_framework',
     'server'
 ]
@@ -77,8 +78,21 @@ WSGI_APPLICATION = 'product_registry.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # CREATE DATABASE <NAME> CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_as_cs;
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'prodreg_test',
+        'COLLATION': 'utf8mb4_0900_as_cs',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'sql_mode': 'STRICT_ALL_TABLES',
+            'read_default_file': '/etc/Orange-Button-ProductRegistry/db.cnf'
+        },
+        'TEST': {
+            'CHARSET': 'utf8mb4',
+            'COLLATION': 'utf8mb4_0900_as_cs'
+        }
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

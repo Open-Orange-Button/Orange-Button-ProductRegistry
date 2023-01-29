@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from django.db import models
 from django.core import validators
 
+from django_mysql import models as mysql_models
+
 
 NAME_LEN = 100
 STR_LEN = 500
@@ -217,11 +219,9 @@ class OBElement:
                                     blank=True, null=True)
 
     def _Unit_field(self):
-        max_length = max(len(v.id) for v in self.grouped_item_type.values)
-        choices = tuple((v.id, v.label) for v in self.grouped_item_type.values)
-        return models.CharField(self.verbose_model_field_name(Primitive.Unit),
-                                choices=choices,
-                                max_length=max_length, blank=True)
+        choices = [(v.id, v.label) for v in self.grouped_item_type.values]
+        choices.append(('', ''))
+        return mysql_models.EnumField(self.verbose_model_field_name(Primitive.Unit), choices=choices)
 
     def _Value_field(self):
         verbose_name = self.verbose_model_field_name(Primitive.Value)
@@ -305,11 +305,12 @@ class OBElement:
                 field_kwargs.update(self.Value_opts)
                 return models.UUIDField(verbose_name, **field_kwargs)
             case _:
+                if self.item_type_has_enums:
+                    choices = [(v.id, v.label) for v in self.grouped_item_type.values]
+                    choices.append(('', ''))
+                    return mysql_models.EnumField(verbose_name, choices=choices)
                 field_kwargs = dict(blank=True, max_length=STR_LEN)
                 field_kwargs.update(self.Value_opts)
-                if self.item_type_has_enums:
-                    field_kwargs['max_length'] = max(len(v.id) for v in self.grouped_item_type.values)
-                    field_kwargs['choices'] = tuple((v.id, v.label) for v in self.grouped_item_type.values)
                 return models.CharField(verbose_name, **field_kwargs)
 
 

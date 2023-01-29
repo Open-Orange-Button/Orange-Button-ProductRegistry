@@ -3,6 +3,9 @@ import enum
 from django.db import models
 from django.core import validators
 from django.contrib import auth
+
+from django_mysql import models as mysql_models
+
 import server.ob_item_types as obit
 
 
@@ -66,7 +69,7 @@ class ModelBase(models.base.ModelBase):
             attrs[a] = models.ForeignKey(a, **FOREIGN_KEY_KWARGS)
 
 
-class Model(models.Model, metaclass=ModelBase):
+class Model(mysql_models.Model, metaclass=ModelBase):
     pass
 
     class Meta:

@@ -352,15 +352,13 @@ def upload(model_name, dataframe, field_mapping, value_mapping, extra_default_fi
     for i, d in enumerate(tqdm(data_ob, ascii=True, desc='prep inserts')):
         build_model_kwarg_groups(model_name, d[model_name], independent_and_1to1_models, foreign_key_models)
     with transaction.atomic():
-        products = save_model_kwarg_groups(independent_and_1to1_models, foreign_key_models)
-    prod_ids = []
-    internal_ids = []
-    for p in products:
-        if not hasattr(p, 'prodcell'):
-            prod_ids.append(getattr(p, 'ProdID_Value'))
-            internal_ids.append(p.id)
-    dataframe['ProdID'] = prod_ids
-    dataframe['internal_id'] = internal_ids
+        product_internal_ids = save_model_kwarg_groups(independent_and_1to1_models, foreign_key_models)
+    dataframe['internal_id'], dataframe['ProdID'] = zip(
+        *django_model('Product').objects
+        .filter(id__in=product_internal_ids)
+        .exclude(id__in=django_model('ProdCell').objects.values_list('id', flat=True))
+        .values_list('id', 'ProdID_Value')
+    )
     dataframe = dataframe.set_index('internal_id')
     insertions_filepath = DATA_DIR / f'upload-{model_name}-{datetime.datetime.now()}'
     dataframe.to_csv(insertions_filepath)
@@ -404,7 +402,7 @@ def build_model_kwarg_groups(model_name, d: dict, independent_and_1to1_models: O
 
 
 def save_model_kwarg_groups(independent_and_1to1_models: OrderedDict, foreign_key_models: OrderedDict):
-    products = []
+    product_internal_ids = []
 
     def resolve_relations(info, has_1toM=False):
         for kwargs in info.values():
@@ -421,35 +419,17 @@ def save_model_kwarg_groups(independent_and_1to1_models: OrderedDict, foreign_ke
 
     def handle_insertions(model_name, info):
         d_model = django_model(model_name)
-        models_to_save = []
-        for kwargs in tqdm(info.values(), ascii=True, desc=f'constructing/validating models ({model_name})'):
-            m = d_model(**kwargs)
-            try:
-                m.clean_fields()
-            except exceptions.ValidationError as e:
-                import pdb
-                pdb.set_trace()
-                print(f'Validation error! {e}')
-                print('You may try to fix to value in PDB. Be sure to add the change to the code so that it will be handled automatically next time!')
-                recovered = False
-                if recovered:
-                    m.clean_fields()
-                else:
-                    raise e
-            models_to_save.append(m)
+        current_ids = tuple(d_model.objects.values_list('id', flat=True))
+        models_to_save = [d_model(**m) for m in info.values()]
         if is_multi_table_inheritance_model(d_model):
-            saved_models = []
-            for m in tqdm(models_to_save, ascii=True, desc=f'multi-table model ({model_name}): insert one by one'):
-                m.save()
-                saved_models.append(m)
+            multi_table_inheritance_bulk_create(models_to_save)
         else:
-            current_ids = tuple(d_model.objects.values_list('id', flat=True))
             d_model.objects.bulk_create(models_to_save)
-            saved_models = d_model.objects.exclude(id__in=current_ids)
+        saved_models = d_model.objects.exclude(id__in=current_ids)
         for instance_id, model in zip(info.keys(), saved_models):
             info[instance_id] = model
             if hasattr(model, 'ProdID_Value'):
-                products.append(model)
+                product_internal_ids.append(model.id)
 
     for model_name, info in tqdm(independent_and_1to1_models.items(), ascii=True, desc='insert independent and 1to1'):
         resolve_relations(info)
@@ -459,7 +439,28 @@ def save_model_kwarg_groups(independent_and_1to1_models: OrderedDict, foreign_ke
         resolve_relations(info, has_1toM=True)
         handle_insertions(model_name, info)
 
-    return products
+    return product_internal_ids
+
+
+def multi_table_inheritance_bulk_create(models_to_save):
+    if len(models_to_save) == 0:
+        return
+    model = models_to_save[0].__class__
+    local_fields = model._meta.local_fields
+    parent_model = model._meta.pk.related_model
+    parent_fields = parent_model._meta.local_fields
+    parent_current_ids = tuple(parent_model.objects.values_list('id', flat=True))
+    parent_model.objects.bulk_create([
+        parent_model(**{f.name: getattr(o, f.name) for f in parent_fields})
+        for o in models_to_save
+    ])
+    parent_saved_models = parent_model.objects.exclude(id__in=parent_current_ids)
+    for parent, o in zip(parent_saved_models, models_to_save):
+        setattr(o, o._meta.pk.name, parent)
+    qs = models.QuerySet(model)
+    qs._for_write = True
+    with transaction.atomic(savepoint=False):
+        qs._batched_insert(models_to_save, local_fields, batch_size=None)
 
 
 def is_multi_table_inheritance_model(model_class):
