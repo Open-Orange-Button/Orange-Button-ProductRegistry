@@ -80,7 +80,7 @@ DATABASES = {
     'default': {
         # CREATE DATABASE <NAME> CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_as_cs;
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'prodreg_test',
+        'NAME': 'product_registry',
         'COLLATION': 'utf8mb4_0900_as_cs',
         'OPTIONS': {
             'charset': 'utf8mb4',
