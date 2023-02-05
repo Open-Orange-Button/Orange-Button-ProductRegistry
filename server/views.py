@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from django import shortcuts
+from django import shortcuts, http
 from django.views import generic
 from rest_framework import viewsets
 from rest_framework import decorators
@@ -20,7 +20,14 @@ class DetailProdModule(generic.DetailView):
     queryset = models.ProdModule.objects.all()
 
     def get_object(self):
-        return shortcuts.get_object_or_404(self.model, ProdID_Value=self.kwargs['uuid'])
+        match self.kwargs:
+            case {'uuid': ProdID_Value}:
+                query = dict(ProdID_Value=ProdID_Value)
+            case {'ProdCode_Value': ProdCode_Value}:
+                query = dict(ProdCode_Value=ProdCode_Value)
+            case _:
+                query = dict(id=None)
+        return shortcuts.get_object_or_404(self.model, **query)
 
 
 def get_prod_type_by_fields(fields):

@@ -20,6 +20,7 @@ from server import views
 
 urlpatterns = [
     urls.path('prodmodule/', views.ListProdModule.as_view(), name='prodmodule'),
-    urls.path('prodmodule/<uuid:uuid>/', views.DetailProdModule.as_view(), name='prodmodule-detail'),
+    urls.path('prodmodule/<uuid:uuid>/', views.DetailProdModule.as_view(), name='prodmodule-detail-prodid'),
+    urls.path('prodmodule/<slug:ProdCode_Value>/', views.DetailProdModule.as_view(), name='prodmodule-detail-prodcode'),
     urls.path('api/v1/', urls.include('server.urls_api'))
 ]
