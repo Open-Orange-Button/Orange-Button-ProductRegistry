@@ -1,12 +1,26 @@
 from collections import OrderedDict
 
-from django.shortcuts import render
+from django import shortcuts
+from django.views import generic
 from rest_framework import viewsets
 from rest_framework import decorators
 
 from server import models
 from server import serializers
 from server import ob_item_types as obit
+
+
+class ListProdModule(generic.ListView):
+    model = models.ProdModule
+    queryset = models.ProdModule.objects.all()[:5]
+
+
+class DetailProdModule(generic.DetailView):
+    model = models.ProdModule
+    queryset = models.ProdModule.objects.all()
+
+    def get_object(self):
+        return shortcuts.get_object_or_404(self.model, ProdID_Value=self.kwargs['uuid'])
 
 
 def get_prod_type_by_fields(fields):

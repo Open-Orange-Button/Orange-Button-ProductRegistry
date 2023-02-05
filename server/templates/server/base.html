@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    {% load static %}
+    <link rel='shortcut icon' type='image/png' href="{% static 'server/favicon.ico' %}"/>
+    <link rel='stylesheet' href="{% static 'server/css/pico/css/pico.min.css' %}">
+    <link rel='stylesheet' href="{% static 'server/css/base.css' %}">
+    <title>{% block title %}OB Product Registry{% endblock %}</title>
+    {% block extrahead %}{% endblock %}
+<head>
+<body>
+    <nav class='container-fluid'>
+        <ul>
+            <li>
+                <img src="{% static 'server/Orange-Button.png' %}" id='navbar-logo'/>
+                <strong>Product Registry</strong>
+            </li>
+        </ul>
+        <ul>
+            <li>
+                <li role='list' dir='rtl'>
+                    <a href='#' aria-haspopup='listbox' role='link'>Products</a>
+                    <ul role='listbox'>
+                        <li><a>ProdModule</a></li>
+                    </ul>
+                </details>
+            </li>
+        </ul>
+    </nav>
+    <header class='container'>
+        {% block header %}{% endblock %}
+    </header>
+    <main class='container'>
+        {% block main %}{% endblock %}
+    </main>
+    <footer class='container'>
+        {% block footer %}{% endblock %}
+    </footer>
+</body>
+</html>

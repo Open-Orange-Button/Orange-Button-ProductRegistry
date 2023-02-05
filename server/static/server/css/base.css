@@ -1,0 +1,35 @@
+#navbar-logo {
+    max-width: 2.5em;
+}
+
+
+[data-theme='light'],
+:root:not([data-theme='dark']) {
+    --primary: #ffb300;
+    --primary-hover: #ffa000;
+    --primary-focus: rgba(251, 179, 0, 0.125);
+    --primary-inverse: rgba(0, 0, 0, 0.75);
+}
+
+@media only screen and (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        --primary: #ffb300;
+        --primary-hover: #ffc107;
+        --primary-focus: rgba(251, 140, 0, 0.25);
+        --primary-inverse: #FFF;
+    }
+}
+
+[data-theme='dark'] {
+    --primary: #ffb300;
+    --primary-hover: #ffc107;
+    --primary-focus: rgba(251, 179, 0, 0.25);
+    --primary-inverse: rgba(0, 0, 0, 0.75);
+}
+
+:root {
+    --form-element-active-border-color: var(--primary);
+    --form-element-focus-color: var(--primary-focus);
+    --switch-color: var(-primary-inverse);
+    --switch-color-background-color: var(--primary);
+}
