@@ -1,0 +1,46 @@
+<article>
+    <div class='grid'>
+        <div>
+            {% with widget=widget.subwidgets_dict.Value %}
+                <label for='{{ widget.name }}'>
+                    <div role='link'>Value</div>
+                        {% include widget.template_name %}
+                </label>
+            {% endwith %}
+            {% with widget=widget.subwidgets_dict.Unit %}
+                <label for='{{ widget.name }}'>
+                    <div role='link'>Unit</div>
+                        {% include widget.template_name %}
+                </label>
+            {% endwith %}
+        </div>
+        <div>
+            {% with widget=widget.subwidgets_dict.StartTime %}
+                <label for='{{ widget.name }}'>
+                    <div role='link'>StartTime</div>
+                        {% include widget.template_name %}
+                </label>
+            {% endwith %}
+            {% with widget=widget.subwidgets_dict.EndTime %}
+                <label for='{{ widget.name }}'>
+                    <div role='link'>EndTime</div>
+                        {% include widget.template_name %}
+                </label>
+            {% endwith %}
+        </div>
+        <div>
+            {% with widget=widget.subwidgets_dict.Decimals %}
+                <label for='{{ widget.name }}'>
+                    <div role='link'>Decimals</div>
+                        {% include widget.template_name %}
+                </label>
+            {% endwith %}
+            {% with widget=widget.subwidgets_dict.Precision %}
+                <label for='{{ widget.name }}'>
+                    <div role='link'>Precision</div>
+                        {% include widget.template_name %}
+                </label>
+            {% endwith %}
+        </div>
+    </div>
+</article>

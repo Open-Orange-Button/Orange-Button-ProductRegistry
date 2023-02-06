@@ -1,0 +1,18 @@
+{% extends 'server/base.html' %}
+
+{% block header %}
+<h2>ProdModule {{ prodmodule.ProdID_Value }}</h2>
+{% endblock %}
+
+{% block main %}
+    <form action='/update/' method='post'>
+        {% csrf_token %}
+        {% for field in form %}
+            <details>
+                <summary>{{ field.name }}</summary>
+                {{ field }}
+            </details>
+        {% endfor %}
+        <input type='submit' value='Submit'>
+    </form>
+{% endblock %}

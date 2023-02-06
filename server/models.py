@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import enum
 
+from django import urls
 from django.db import models
 from django.core import validators
 from django.contrib import auth
@@ -183,6 +184,9 @@ class ProdModule(Product):
             blank=True, null=True
         )
     )
+
+    def get_absolute_url(self):
+        return urls.reverse('prodmodule-detail-prodid', kwargs=dict(uuid=self.ProdID_Value))
 
 
 class ProdInverter(Product):

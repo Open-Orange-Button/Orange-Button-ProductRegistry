@@ -1,13 +1,11 @@
 from collections import OrderedDict
 
-from django import shortcuts, http
+from django import shortcuts
 from django.views import generic
 from rest_framework import viewsets
 from rest_framework import decorators
 
-from server import models
-from server import serializers
-from server import ob_item_types as obit
+from server import models, ob_item_types as obit, serializers, forms
 
 
 class ListProdModule(generic.ListView):
@@ -28,6 +26,24 @@ class DetailProdModule(generic.DetailView):
             case _:
                 query = dict(id=None)
         return shortcuts.get_object_or_404(self.model, **query)
+
+
+class UpdateViewProdModule(generic.edit.FormView):
+    template_name = 'server/prodmodule_form.html'
+    form_class = forms.ProdModule
+
+    def get_object(self):
+        match self.kwargs:
+            case {'uuid': ProdID_Value}:
+                query = dict(ProdID_Value=ProdID_Value)
+            case {'ProdCode_Value': ProdCode_Value}:
+                query = dict(ProdCode_Value=ProdCode_Value)
+            case _:
+                query = dict(id=None)
+        return shortcuts.get_object_or_404(models.ProdModule, **query)
+
+    def get_initial(self):
+        return self.get_object()
 
 
 def get_prod_type_by_fields(fields):
