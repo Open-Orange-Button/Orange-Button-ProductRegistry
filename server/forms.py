@@ -19,8 +19,9 @@ class WidgetOBElement(forms.MultiWidget):
         super().__init__(widgets, attrs)
 
     def get_context(self, name, value, attrs):
+        fname = name.split('-')[-1]
         values_list = []
-        prims = set(p.name for p in obit.OBElement(name).primitives())
+        prims = set(p.name for p in obit.OBElement(fname).primitives())
         for wn in self.widgets_names:
             if (p := wn[1:]) in prims and (v := value[p]) is not None:
                 values_list.append(v)
@@ -58,13 +59,50 @@ class OBElement(forms.MultiValueField):
         pass
 
 
-class ProdModule(forms.Form):
-    # Description = forms.CharField(label='Description', max_length=10)
-    Description = OBElement(label='Description')
-    ProdID = OBElement(label='Description')
+class FormMetaclass(forms.forms.DeclarativeFieldsMetaclass):
+    def __new__(cls, name, bases, attrs):
+        if name != 'Form':
+            match obit.get_schema_type(name):
+                case obit.OBType.Element:
+                    e = obit.OBElement(name, use_primitive_names=True)
+                    for field_name, field in e.model_fields().items():
+                        attrs[field_name] = field
+                case _:
+                    cls.add_ob_elements(name, attrs)
+        return super().__new__(cls, name, bases, attrs)
 
+    @classmethod
+    def add_ob_elements(cls, name, attrs):
+        elements = attrs.get('ob_elements', None)
+        if elements is None:
+            elements = obit.elements_of_ob_object(name)
+        for e in elements:
+            attrs[e] = OBElement()
+
+
+class Form(forms.Form, metaclass=FormMetaclass):
     def get_initial_for_field(self, field, field_name):
-        ob_element = obit.OBElement(field_name)
-        prodmodule = self.initial
-        return {p.name: getattr(prodmodule, f'{field_name}_{p.name}')
+        name = field_name.split(self.prefix)[-1]
+        ob_element = obit.OBElement(name)
+        return {p.name: getattr(self.initial, f'{name}_{p.name}')
                 for p in ob_element.primitives()}
+
+
+class Dimension(Form):
+    pass
+
+
+class Product(Form):
+    pass
+
+
+class ProdCell(Form):
+    pass
+
+
+class ProdGlazing(Form):
+    pass
+
+
+class ProdModule(Product):
+    pass

@@ -2,6 +2,10 @@
     max-width: 2.5em;
 }
 
+.indent {
+    margin-left: 1.5em;
+}
+
 
 [data-theme='light'],
 :root:not([data-theme='dark']) {

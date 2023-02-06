@@ -10,7 +10,7 @@ from server import models, ob_item_types as obit, serializers, forms
 
 class ListProdModule(generic.ListView):
     model = models.ProdModule
-    queryset = models.ProdModule.objects.all()[:5]
+    queryset = models.ProdModule.objects.all()[:20]
 
 
 class DetailProdModule(generic.DetailView):
@@ -28,19 +28,40 @@ class DetailProdModule(generic.DetailView):
         return shortcuts.get_object_or_404(self.model, **query)
 
 
+def get_prodmodule(kwargs):
+    match kwargs:
+        case {'uuid': ProdID_Value}:
+            query = dict(ProdID_Value=ProdID_Value)
+        case {'ProdCode_Value': ProdCode_Value}:
+            query = dict(ProdCode_Value=ProdCode_Value)
+        case _:
+            query = dict(id=None)
+    return shortcuts.get_object_or_404(models.ProdModule, **query)
+
+
+def updateviewprodmodule(request, **kwargs):
+    if request.method == 'POST':
+        pass
+    else:
+        prodmodule = get_prodmodule(kwargs)
+        prodmodule_form = forms.ProdModule(initial=prodmodule, prefix='prodmodule')
+        dimension_form = forms.Dimension(initial=prodmodule.Dimension, prefix='dimension')
+    return shortcuts.render(
+        request,
+        'server/prodmodule_form.html',
+        context=dict(
+            prodmodule=prodmodule,
+            prodmodule_form=prodmodule_form,
+            dimension_form=dimension_form
+        )
+    )
+
+
+
 class UpdateViewProdModule(generic.edit.FormView):
     template_name = 'server/prodmodule_form.html'
     form_class = forms.ProdModule
 
-    def get_object(self):
-        match self.kwargs:
-            case {'uuid': ProdID_Value}:
-                query = dict(ProdID_Value=ProdID_Value)
-            case {'ProdCode_Value': ProdCode_Value}:
-                query = dict(ProdCode_Value=ProdCode_Value)
-            case _:
-                query = dict(id=None)
-        return shortcuts.get_object_or_404(models.ProdModule, **query)
 
     def get_initial(self):
         return self.get_object()

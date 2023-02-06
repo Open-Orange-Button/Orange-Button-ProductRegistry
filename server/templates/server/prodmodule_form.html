@@ -7,12 +7,21 @@
 {% block main %}
     <form action='/update/' method='post'>
         {% csrf_token %}
-        {% for field in form %}
+        {% for field in prodmodule_form %}
             <details>
                 <summary>{{ field.name }}</summary>
                 {{ field }}
             </details>
         {% endfor %}
+        <details>
+            <summary>Dimension</summary>
+            {% for field in dimension_form %}
+                <details class='indent'>
+                    <summary>{{ field.name }}</summary>
+                    {{ field }}
+                </details>
+            {% endfor %}
+        </details>
         <input type='submit' value='Submit'>
     </form>
 {% endblock %}
