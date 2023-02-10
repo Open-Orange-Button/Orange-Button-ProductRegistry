@@ -7,36 +7,81 @@
 {% block main %}
     <form action='/update/' method='post'>
         {% csrf_token %}
-        <table class='table'>
-            <thead>
-                <tr>
-                    <th scope='col'>Field</th>
-                    <th scope='col'>Value</th>
-                    <th scope='col'>Unit</th>
-                    <th scope='col'>Details</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for field in prodmodule_form %}
-                    <tr>
-                        <th scope='row'>{{ field.name }}</th>
-                        <td>{{ field.value.Value }}</td>
-                        <td>u</td>
-                        <td>
-                            <button class='btn btn-secondary' type='button' data-bs-toggle='collapse' data-bs-target='#collapse-details-{{ field.name | lower }}' aria-expanded='false' aria-controls='collapse-{{ field.name | lower }}'>
-                                Show Details
-                            </button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan='4' id='collapse-details-{{ field.name | lower }}' class='collapse'>
-                            <div class='card'>
-                                {{ field }}
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <ul class='nav nav-tabs' role='tablist'>
+            <li class='nav-item' role='presentation'>
+                <button class='nav-link active' id='prodmodule-tab' data-bs-toggle='tab' data-bs-target='#prodmodule' type='button' role='tab' aria-controls='prodmodule' aria-selected='true'>ProdModule</button>
+            </li>
+            <li class='nav-item' role='presentation'>
+                <button class='nav-link' id='dimension-tab' data-bs-toggle='tab' data-bs-target='#dimension' type='button' role='tab' aria-controls='dimension' aria-selected='false'>Dimension</button>
+            </li>
+        </ul>
+        <div class='tab-content'>
+            <div class='tab-pane fade show active' id='prodmodule' role='tabpanel' aria-labelledby='prodmodule-tab'>
+                <table class='table'>
+                    <thead>
+                        <tr>
+                            <th scope='col'>Field</th>
+                            <th scope='col'>Value</th>
+                            <th scope='col'>Unit</th>
+                            <th scope='col'>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in prodmodule_form %}
+                            <tr>
+                                <th scope='row'>{{ field.name }}</th>
+                                <td>{{ field.value.Value }}</td>
+                                <td>{{ field.value.Unit }}</td>
+                                <td>
+                                    <button class='btn btn-secondary' type='button' data-bs-toggle='collapse' data-bs-target='#collapse-details-{{ field.name | lower }}' aria-expanded='false' aria-controls='collapse-{{ field.name | lower }}'>
+                                        Show Details
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan='4' id='collapse-details-{{ field.name | lower }}' class='collapse'>
+                                    <div class='card'>
+                                        {{ field }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class='tab-pane fade' id='dimension' role='tabpanel' aria-labelledby='dimension-tab'>
+                <table class='table'>
+                    <thead>
+                        <tr>
+                            <th scope='col'>Field</th>
+                            <th scope='col'>Value</th>
+                            <th scope='col'>Unit</th>
+                            <th scope='col'>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field in dimension_form %}
+                            <tr>
+                                <th scope='row'>{{ field.name }}</th>
+                                <td>{{ field.value.Value }}</td>
+                                <td>{{ field.value.Unit }}</td>
+                                <td>
+                                    <button class='btn btn-secondary' type='button' data-bs-toggle='collapse' data-bs-target='#collapse-details-{{ field.name | lower }}' aria-expanded='false' aria-controls='collapse-{{ field.name | lower }}'>
+                                        Show Details
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan='4' id='collapse-details-{{ field.name | lower }}' class='collapse'>
+                                    <div class='card'>
+                                        {{ field }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </form>
 {% endblock %}
