@@ -1,21 +1,20 @@
 from django import forms
 
-from server import ob_item_types as obit
+from server import ob_item_types as obit, models
+
+
+class WidgetDate(forms.DateInput):
+    template_name = 'server/forms/widgets/date.html'
+
+
+class WidgetDateTime(forms.DateTimeInput):
+    template_name = 'server/forms/widgets/datetime.html'
 
 
 class WidgetOBElement(forms.MultiWidget):
     template_name = 'server/forms/widgets/multiwidget_obelement.html'
 
-    def __init__(self, editable=True, attrs=None):
-        widgets = dict(
-            Value=forms.TextInput(),
-            Unit=forms.TextInput(),
-            StartTime=forms.TextInput(),
-            EndTime=forms.TextInput(),
-            Decimals=forms.TextInput(),
-            Precision=forms.TextInput()
-        )
-        self.editable = editable
+    def __init__(self, widgets, attrs=None):
         super().__init__(widgets, attrs)
 
     def get_context(self, name, value, attrs):
@@ -23,12 +22,11 @@ class WidgetOBElement(forms.MultiWidget):
         values_list = []
         prims = set(p.name for p in obit.OBElement(fname).primitives())
         for wn in self.widgets_names:
-            if (p := wn[1:]) in prims and (v := value[p]) is not None:
-                values_list.append(v)
+            if (p := wn[1:]) in prims:
+                values_list.append(value[p])
             else:
                 values_list.append('')
         context = super().get_context(name, values_list, attrs)
-        context['editable'] = self.editable
         context['widget']['subwidgets_dict'] = {
             prim[1:]: sw_context
             for prim, sw_context in zip(self.widgets_names, context['widget']['subwidgets'])
@@ -40,19 +38,29 @@ class WidgetOBElement(forms.MultiWidget):
         return [''] * 2
 
     def render(self, name, value, attrs=None, renderer=None):
-        if self.editable:
-            pass
         r = super().render(name, value, attrs=attrs, renderer=renderer)
         print(r)
         return r
 
 
 class OBElement(forms.MultiValueField):
-    widget = WidgetOBElement
-
-    def __init__(self, **kwargs,):  # required, label, initil, widget, help_text):
+    def __init__(self, ob_element, **kwargs):  # required, label, initil, widget, help_text):
+        self.ob_element = ob_element
         error_messages = dict(err='err')
-        fields = (forms.CharField(label='Value', max_length=10), forms.CharField(label='Unit', max_length=10))
+        model_fields = ob_element.model_fields()
+        fields = tuple(f.formfield() for f in model_fields.values())
+        field_widgets = {}
+        for k, f in zip(model_fields, fields):
+            attrs = dict({'class': 'form-control'})
+            match f:
+                case forms.DateTimeField():
+                    f.widget = WidgetDateTime()
+                case forms.Field(choices=c):
+                    if len(c) > 0:
+                        attrs['class'] = 'form-select'
+            f.widget.attrs.update(attrs)
+            field_widgets[k.split('_')[-1]] = f.widget
+        self.widget = WidgetOBElement(field_widgets)
         super().__init__(error_messages=error_messages, fields=fields, require_all_fields=False, **kwargs)
 
     def compress(self, data_list):
@@ -73,11 +81,9 @@ class FormMetaclass(forms.forms.DeclarativeFieldsMetaclass):
 
     @classmethod
     def add_ob_elements(cls, name, attrs):
-        elements = attrs.get('ob_elements', None)
-        if elements is None:
-            elements = obit.elements_of_ob_object(name)
-        for e in elements:
-            attrs[e] = OBElement()
+        elements = getattr(models, name).ob_elements
+        for e in elements.values():
+            attrs[e.name] = OBElement(e)
 
 
 class Form(forms.Form, metaclass=FormMetaclass):

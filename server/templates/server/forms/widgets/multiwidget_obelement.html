@@ -1,46 +1,104 @@
-<article>
-    <div class='grid'>
-        <div>
-            {% with widget=widget.subwidgets_dict.Value %}
-                <label for='{{ widget.name }}'>
-                    <div role='link'>Value</div>
+<div class='container'>
+    <div class='row'>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Value</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.Value %}
                         {% include widget.template_name %}
-                </label>
-            {% endwith %}
-            {% with widget=widget.subwidgets_dict.Unit %}
-                <label for='{{ widget.name }}'>
-                    <div role='link'>Unit</div>
-                        {% include widget.template_name %}
-                </label>
-            {% endwith %}
+                    {% endwith %}
+                </div>
+            </div>
         </div>
-        <div>
-            {% with widget=widget.subwidgets_dict.StartTime %}
-                <label for='{{ widget.name }}'>
-                    <div role='link'>StartTime</div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>StartTime</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.StartTime %}
                         {% include widget.template_name %}
-                </label>
-            {% endwith %}
-            {% with widget=widget.subwidgets_dict.EndTime %}
-                <label for='{{ widget.name }}'>
-                    <div role='link'>EndTime</div>
-                        {% include widget.template_name %}
-                </label>
-            {% endwith %}
+                    {% endwith %}
+                </div>
+            </div>
         </div>
-        <div>
-            {% with widget=widget.subwidgets_dict.Decimals %}
-                <label for='{{ widget.name }}'>
-                    <div role='link'>Decimals</div>
-                        {% include widget.template_name %}
-                </label>
-            {% endwith %}
-            {% with widget=widget.subwidgets_dict.Precision %}
-                <label for='{{ widget.name }}'>
-                    <div role='link'>Precision</div>
-                        {% include widget.template_name %}
-                </label>
-            {% endwith %}
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Decimals</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.Decimals %}
+                        {% if widget %}
+                            <label for='{{ widget.name }}'>
+                                {% include widget.template_name %}
+                            </label>
+                        {% else %}
+                            <input readonly class='form-control-plaintext' value='Not Applicable' />
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
         </div>
     </div>
-</article>
+    <div class='row'>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Unit</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                {% with widget=widget.subwidgets_dict.Unit %}
+                    {% if widget %}
+                        {% include widget.template_name %}
+                    {% else %}
+                        <input readonly class='form-control-plaintext' value='Not Applicable' />
+                    {% endif %}
+                {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>EndTime</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.EndTime %}
+                        {% include widget.template_name %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Precision</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                {% with widget=widget.subwidgets_dict.Precision %}
+                    {% if widget %}
+                        {% include widget.template_name %}
+                    {% else %}
+                        <input readonly class='form-control-plaintext' value='Not Applicable' />
+                    {% endif %}
+                {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

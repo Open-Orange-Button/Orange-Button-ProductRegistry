@@ -7,21 +7,36 @@
 {% block main %}
     <form action='/update/' method='post'>
         {% csrf_token %}
-        {% for field in prodmodule_form %}
-            <details>
-                <summary>{{ field.name }}</summary>
-                {{ field }}
-            </details>
-        {% endfor %}
-        <details>
-            <summary>Dimension</summary>
-            {% for field in dimension_form %}
-                <details class='indent'>
-                    <summary>{{ field.name }}</summary>
-                    {{ field }}
-                </details>
-            {% endfor %}
-        </details>
-        <input type='submit' value='Submit'>
+        <table class='table'>
+            <thead>
+                <tr>
+                    <th scope='col'>Field</th>
+                    <th scope='col'>Value</th>
+                    <th scope='col'>Unit</th>
+                    <th scope='col'>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in prodmodule_form %}
+                    <tr>
+                        <th scope='row'>{{ field.name }}</th>
+                        <td>{{ field.value.Value }}</td>
+                        <td>u</td>
+                        <td>
+                            <button class='btn btn-secondary' type='button' data-bs-toggle='collapse' data-bs-target='#collapse-details-{{ field.name | lower }}' aria-expanded='false' aria-controls='collapse-{{ field.name | lower }}'>
+                                Show Details
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan='4' id='collapse-details-{{ field.name | lower }}' class='collapse'>
+                            <div class='card'>
+                                {{ field }}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </form>
 {% endblock %}

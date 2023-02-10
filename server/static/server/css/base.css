@@ -1,39 +1,3 @@
 #navbar-logo {
     max-width: 2.5em;
 }
-
-.indent {
-    margin-left: 1.5em;
-}
-
-
-[data-theme='light'],
-:root:not([data-theme='dark']) {
-    --primary: #fbaa19;
-    --primary-hover: #fbb007;
-    --primary-focus: rgba(251, 179, 0, 0.125);
-    --primary-inverse: rgba(0, 0, 0, 0.75);
-}
-
-@media only screen and (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-        --primary: #fbaa19;
-        --primary-hover: #fbb007;
-        --primary-focus: rgba(251, 140, 0, 0.25);
-        --primary-inverse: #FFF;
-    }
-}
-
-[data-theme='dark'] {
-    --primary: #fbaa19;
-    --primary-hover: #fbb007;
-    --primary-focus: rgba(251, 179, 0, 0.25);
-    --primary-inverse: rgba(0, 0, 0, 0.75);
-}
-
-:root {
-    --form-element-active-border-color: var(--primary);
-    --form-element-focus-color: var(--primary-focus);
-    --switch-color: var(-primary-inverse);
-    --switch-color-background-color: var(--primary);
-}

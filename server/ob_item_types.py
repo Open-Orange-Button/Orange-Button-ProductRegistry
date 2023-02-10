@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import enum
 import json
 import re
@@ -151,8 +152,8 @@ class OBElement:
                 return self._string_fields()
 
     def model_fields(self):
-        return {self.model_field_name(p): self._primitive_field(p)
-                for p in self.primitives()}
+        return OrderedDict([(self.model_field_name(p), self._primitive_field(p))
+                            for p in self.primitives()])
 
     def model_field_name(self, p: Primitive):
         if self.use_primitive_names:

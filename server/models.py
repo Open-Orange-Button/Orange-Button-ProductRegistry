@@ -60,6 +60,7 @@ class ModelBase(models.base.ModelBase):
         elements = attrs.get('ob_elements', None)
         if elements is None:
             elements = obit.elements_of_ob_object(name)
+            attrs['ob_elements'] = elements
         for e in elements.values():
             for field_name, field in e.model_fields().items():
                 attrs[field_name] = field
