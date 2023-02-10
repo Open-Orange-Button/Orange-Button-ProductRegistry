@@ -1,0 +1,31 @@
+<table class='table'>
+    <thead>
+        <tr>
+            <th scope='col'>Field</th>
+            <th scope='col'>Value</th>
+            <th scope='col'>Unit</th>
+            <th scope='col'>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for field in form %}
+            <tr>
+                <th scope='row'>{{ field.name }}</th>
+                <td>{{ field.value.Value }}</td>
+                <td>{{ field.value.Unit }}</td>
+                <td>
+                    <button class='btn btn-secondary' type='button' data-bs-toggle='collapse' data-bs-target='#collapse-details-{{ field.name | lower }}' aria-expanded='false' aria-controls='collapse-{{ field.name | lower }}'>
+                        Show Details
+                    </button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan='4' id='collapse-details-{{ field.name | lower }}' class='collapse'>
+                    <div class='card'>
+                        {{ field }}
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
