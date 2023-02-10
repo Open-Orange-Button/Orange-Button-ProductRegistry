@@ -50,7 +50,7 @@ class OBElement(forms.MultiValueField):
         model_fields = ob_element.model_fields()
         fields = tuple(f.formfield() for f in model_fields.values())
         field_widgets = {}
-        for k, f in zip(model_fields, fields):
+        for p, f in zip(ob_element.primitives(), fields):
             attrs = dict({'class': 'form-control'})
             match f:
                 case forms.DateTimeField():
@@ -59,9 +59,20 @@ class OBElement(forms.MultiValueField):
                     if len(c) > 0:
                         attrs['class'] = 'form-select'
             f.widget.attrs.update(attrs)
-            field_widgets[k.split('_')[-1]] = f.widget
+            field_widgets[p.name] = f.widget
         self.widget = WidgetOBElement(field_widgets)
         super().__init__(error_messages=error_messages, fields=fields, require_all_fields=False, **kwargs)
+
+    def set_readonly(self):
+        field_widgets = {}
+        for p, f in zip(self.ob_element.primitives(), self.fields):
+            f.widget.attrs.update({
+                'readonly': 'true',
+                'class': 'form-control-plaintext'
+            })
+            f.widget.template_name = forms.TextInput.template_name
+            field_widgets[p.name] = f.widget
+        self.widget = WidgetOBElement(field_widgets)
 
     def compress(self, data_list):
         pass
@@ -87,6 +98,11 @@ class FormMetaclass(forms.forms.DeclarativeFieldsMetaclass):
 
 
 class Form(forms.Form, metaclass=FormMetaclass):
+    def __init__(self, readonly=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for f in self.fields.values():
+            f.set_readonly()
+
     def get_initial_for_field(self, field, field_name):
         name = field_name.split(self.prefix)[-1]
         ob_element = obit.OBElement(name)
