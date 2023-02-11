@@ -22,6 +22,6 @@ urlpatterns = [
     urls.path('prodmodule/', views.ListProdModule.as_view(), name='prodmodule'),
     # urls.path('prodmodule/<uuid:uuid>/', views.DetailProdModule.as_view(), name='prodmodule-detail-prodid'),
     urls.path('prodmodule/<uuid:uuid>/', views.updateviewprodmodule, name='prodmodule-update-prodid'),
-    urls.path('prodmodule/<slug:ProdCode_Value>/', views.DetailProdModule.as_view(), name='prodmodule-detail-prodcode'),
+    urls.path('prodmodule/<slug:ProdCode_Value>/', views.updateviewprodmodule, name='prodmodule-update-prodcode'),
     urls.path('api/v1/', urls.include('server.urls_api'))
 ]

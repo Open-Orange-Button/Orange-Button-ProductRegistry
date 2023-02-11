@@ -102,17 +102,18 @@ class Form(forms.Form, metaclass=FormMetaclass):
             f.set_readonly(readonly)
 
     def get_initial_for_field(self, field, field_name):
-        name = field_name.split(self.prefix)[-1]
-        ob_element = obit.OBElement(name)
-        return {p.name: getattr(self.initial, f'{name}_{p.name}')
-                for p in ob_element.primitives()}
+        return self.initial[field_name]
+
+
+class CertificationAgency(Form):
+    pass
 
 
 class Dimension(Form):
     pass
 
 
-class Product(Form):
+class ModuleElectRating(Form):
     pass
 
 
@@ -120,7 +121,15 @@ class ProdCell(Form):
     pass
 
 
+class ProdCertification(Form):
+    pass
+
+
 class ProdGlazing(Form):
+    pass
+
+
+class Product(Form):
     pass
 
 

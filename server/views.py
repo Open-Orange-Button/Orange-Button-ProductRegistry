@@ -13,21 +13,6 @@ class ListProdModule(generic.ListView):
     queryset = models.ProdModule.objects.all()[800:800+20]
 
 
-class DetailProdModule(generic.DetailView):
-    model = models.ProdModule
-    queryset = models.ProdModule.objects.all()
-
-    def get_object(self):
-        match self.kwargs:
-            case {'uuid': ProdID_Value}:
-                query = dict(ProdID_Value=ProdID_Value)
-            case {'ProdCode_Value': ProdCode_Value}:
-                query = dict(ProdCode_Value=ProdCode_Value)
-            case _:
-                query = dict(id=None)
-        return shortcuts.get_object_or_404(self.model, **query)
-
-
 def get_prodmodule(kwargs):
     match kwargs:
         case {'uuid': ProdID_Value}:
@@ -39,28 +24,55 @@ def get_prodmodule(kwargs):
     return shortcuts.get_object_or_404(models.ProdModule, **query)
 
 
+def get_product_id(kwargs):
+    match kwargs:
+        case {'uuid': ProdID_Value}:
+            query = dict(ProdID_Value=ProdID_Value)
+        case {'ProdCode_Value': ProdCode_Value}:
+            query = dict(ProdCode_Value=ProdCode_Value)
+        case _:
+            query = dict(id=None)
+    return models.Product.objects.filter(**query).values_list('id', flat=True)[0]
+
+
+def get_form_dict(name, d, parent_name=''):
+    form_dict = dict(
+        name=name,
+        form=None,
+        object_form_dicts=[],
+        array_form_dicts=[]
+    )
+    form_initial = {}
+    form_prefix = name.lower() if parent_name == '' else f'{parent_name}-{name.lower()}'
+    for k, v in d.items():
+        match obit.get_schema_type(k):
+            case obit.OBType.Element:
+                form_initial[k] = v
+            case obit.OBType.Object:
+                form_dict['object_form_dicts'].append(get_form_dict(k, v, parent_name=form_prefix))
+            case obit.OBType.Array:
+                prefix_plural = f'{form_prefix}-{k.lower()}'
+                form_dict['array_form_dicts'].append(dict(
+                    plural=k,
+                    prefix_plural=prefix_plural,
+                    object_form_dicts=[get_form_dict(obit.array_to_singular(k), o, parent_name=f'{prefix_plural}-{i}') for i, o in enumerate(v)]
+                ))
+    form_dict['form'] = getattr(forms, name)(initial=form_initial, prefix=form_prefix)
+    return form_dict
+
+
 def updateviewprodmodule(request, **kwargs):
     if request.method == 'POST':
         pass
     else:
-        prodmodule = get_prodmodule(kwargs)
-        objects = obit.objects_of_ob_object('Product') + obit.objects_of_ob_object('ProdModule')
-        object_form_dicts = []
-        for o in objects:
-            object_form_dicts.append(dict(
-                name=o,
-                form=getattr(forms, o)(initial=getattr(prodmodule, o), prefix=o.lower())
-            ))
+        res = list(serializers.serialize_by_ids('ProdModule', ids=[get_product_id(kwargs)]).values())[0]
+        form_dict = get_form_dict('ProdModule', res)
     return shortcuts.render(
         request,
         'server/prodmodule_form.html',
         context=dict(
-            product=prodmodule,
-            product_form_dict=dict(
-                name='ProdModule',
-                form=forms.ProdModule(initial=prodmodule, prefix='prodmodule')
-            ),
-            object_form_dicts=object_form_dicts
+            product=res,
+            form_dict=form_dict
         )
     )
 

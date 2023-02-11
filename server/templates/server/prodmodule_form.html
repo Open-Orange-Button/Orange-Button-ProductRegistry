@@ -2,7 +2,7 @@
 
 {% block header %}
 <h2>
-    {{ product.ProdMfr_Value }}{% if product.ProdName_Value %}: {{ product.ProdName_Value }}{% endif %}
+    {{ product.ProdMfr.Value }}{% if product.ProdName.Value %}: {{ product.ProdName.Value }}{% endif %}
 </h2>
 {% endblock %}
 
@@ -18,32 +18,16 @@
         </thead>
         <tbody>
             <tr>
-                <td>{{ product.ProdMfr_Value }}</td>
-                <td>{{ product.ProdName_Value }}</td>
-                <td>{{ product.ProdCode_Value }}</td>
-                <td>{{ product.ProdID_Value }}</td>
+                <td>{{ product.ProdMfr.Value }}</td>
+                <td>{{ product.ProdName.Value }}</td>
+                <td>{{ product.ProdCode.Value }}</td>
+                <td>{{ product.ProdID.Value }}</td>
             </tr>
         </tbody>
     </table>
-    <h5>{{ product_form_dict.name }} Fields</h5>
+    <h5>{{ form_dict.name }} Fields</h5>
     <form action='/update/' method='post'>
         {% csrf_token %}
-        {% include 'server/fields_table.html' with form=product_form_dict.form %}
-        <div class='accordion'>
-            {% for fd in object_form_dicts %}
-                <div class='accordion-item'>
-                    <h2 class='accordion-header' id='{{ fd.name | lower }}-header'>
-                        <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#{{ fd.name | lower }}' aria-expanded='false' aria-controls='{{ fd.name | lower }}'>
-                            {{ fd.name }}
-                        </button>
-                    </h2>
-                    <div id='{{ fd.name | lower }}' class='accordion-collapse collapse' aria-labelledby='{{ fd.name | lower }}-header'>
-                        <div class='accordion-body'>
-                            {% include 'server/fields_table.html' with form=fd.form %}
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+        {% include 'server/fields_form.html' %}
     </form>
 {% endblock %}
