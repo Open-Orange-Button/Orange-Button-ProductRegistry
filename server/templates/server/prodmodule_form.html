@@ -1,27 +1,49 @@
 {% extends 'server/base.html' %}
 
 {% block header %}
-<h2>ProdModule {{ prodmodule.ProdID_Value }}</h2>
+<h2>
+    {{ product.ProdMfr_Value }}{% if product.ProdName_Value %}: {{ product.ProdName_Value }}{% endif %}
+</h2>
 {% endblock %}
 
 {% block main %}
+    <table class='table'>
+        <thead>
+            <tr>
+                <th scope='col'>ProdMfr</th>
+                <th scope='col'>ProdName</th>
+                <th scope='col'>ProdCode</th>
+                <th scope='col'>ProdID</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ product.ProdMfr_Value }}</td>
+                <td>{{ product.ProdName_Value }}</td>
+                <td>{{ product.ProdCode_Value }}</td>
+                <td>{{ product.ProdID_Value }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <h5>{{ product_form_dict.name }} Fields</h5>
     <form action='/update/' method='post'>
         {% csrf_token %}
-        <ul class='nav nav-tabs' role='tablist'>
-            <li class='nav-item' role='presentation'>
-                <button class='nav-link active' id='prodmodule-tab' data-bs-toggle='tab' data-bs-target='#prodmodule' type='button' role='tab' aria-controls='prodmodule' aria-selected='true'>ProdModule</button>
-            </li>
-            <li class='nav-item' role='presentation'>
-                <button class='nav-link' id='dimension-tab' data-bs-toggle='tab' data-bs-target='#dimension' type='button' role='tab' aria-controls='dimension' aria-selected='false'>Dimension</button>
-            </li>
-        </ul>
-        <div class='tab-content'>
-            <div class='tab-pane fade show active' id='prodmodule' role='tabpanel' aria-labelledby='prodmodule-tab'>
-                {% include 'server/fields_table.html' with form=prodmodule_form %}
-            </div>
-            <div class='tab-pane fade' id='dimension' role='tabpanel' aria-labelledby='dimension-tab'>
-                {% include 'server/fields_table.html' with form=dimension_form %}
-            </div>
+        {% include 'server/fields_table.html' with form=product_form_dict.form %}
+        <div class='accordion'>
+            {% for fd in object_form_dicts %}
+                <div class='accordion-item'>
+                    <h2 class='accordion-header' id='{{ fd.name | lower }}-header'>
+                        <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#{{ fd.name | lower }}' aria-expanded='false' aria-controls='{{ fd.name | lower }}'>
+                            {{ fd.name }}
+                        </button>
+                    </h2>
+                    <div id='{{ fd.name | lower }}' class='accordion-collapse collapse' aria-labelledby='{{ fd.name | lower }}-header'>
+                        <div class='accordion-body'>
+                            {% include 'server/fields_table.html' with form=fd.form %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
     </form>
 {% endblock %}

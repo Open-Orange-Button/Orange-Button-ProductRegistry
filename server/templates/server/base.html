@@ -48,14 +48,16 @@
             </div>
         </div>
     </nav>
-    <header class='container'>
+    <div class='container'>
         {% block header %}{% endblock %}
-    </header>
-    <main class='container'>
+    </div>
+    <div class='container'>
         {% block main %}{% endblock %}
-    </main>
-    <footer class='container'>
-        {% block footer %}{% endblock %}
-    </footer>
+    </div>
+    <div class='container'>
+        {% block footer %}
+            <div style='margin-top: 10rem' />
+        {% endblock %}
+    </div>
 </body>
 </html>

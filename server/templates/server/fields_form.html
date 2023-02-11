@@ -1,0 +1,17 @@
+{% include 'server/fields_table.html' with form=parent_form %}
+<div class='accordion'>
+    {% for fd in object_form_dicts %}
+        <div class='accordion-item'>
+            <h2 class='accordion-header' id='{{ fd.name | lower }}-header'>
+                <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#{{ fd.name | lower }}' aria-expanded='false' aria-controls='{{ fd.name | lower }}'>
+                    {{ fd.name }}
+                </button>
+            </h2>
+            <div id='{{ fd.name | lower }}' class='accordion-collapse collapse' aria-labelledby='{{ fd.name | lower }}-header'>
+                <div class='accordion-body'>
+                    {% include 'fields_form.html' with form=fd.form object_form_dicts=fd.object_form_dicts %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>

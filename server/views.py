@@ -44,15 +44,23 @@ def updateviewprodmodule(request, **kwargs):
         pass
     else:
         prodmodule = get_prodmodule(kwargs)
-        prodmodule_form = forms.ProdModule(initial=prodmodule, prefix='prodmodule')
-        dimension_form = forms.Dimension(initial=prodmodule.Dimension, prefix='dimension')
+        objects = obit.objects_of_ob_object('Product') + obit.objects_of_ob_object('ProdModule')
+        object_form_dicts = []
+        for o in objects:
+            object_form_dicts.append(dict(
+                name=o,
+                form=getattr(forms, o)(initial=getattr(prodmodule, o), prefix=o.lower())
+            ))
     return shortcuts.render(
         request,
         'server/prodmodule_form.html',
         context=dict(
-            prodmodule=prodmodule,
-            prodmodule_form=prodmodule_form,
-            dimension_form=dimension_form
+            product=prodmodule,
+            product_form_dict=dict(
+                name='ProdModule',
+                form=forms.ProdModule(initial=prodmodule, prefix='prodmodule')
+            ),
+            object_form_dicts=object_form_dicts
         )
     )
 
