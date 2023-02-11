@@ -1,4 +1,4 @@
-{% include 'server/fields_table.html' with form=form_dict.form %}
+{% include 'server/forms/fields_table.html' with form=form_dict.form %}
 <div class='accordion'>
     {% for fd in form_dict.object_form_dicts %}
         {% with accordion_id=fd.form.prefix %}
@@ -10,7 +10,7 @@
                 </h2>
                 <div id='{{ accordion_id }}' class='accordion-collapse collapse' aria-labelledby='{{ accordion_id }}-header'>
                     <div class='accordion-body'>
-                        {% include 'server/fields_form.html' with form_dict=fd %}
+                        {% include 'server/forms/fields_form.html' with form_dict=fd %}
                     </div>
                 </div>
             </div>
@@ -41,7 +41,7 @@
                             {% for fd in afd.object_form_dicts %}
                                 {% with tab_id=fd.form.prefix %}
                                     <div class='tab-pane fade {% if forloop.first %}show active{% endif %}' id='{{ tab_id }}' role='tabpanel' aria-labelledby='{{ tab_id }}-tab'>
-                                        {% include 'server/fields_form.html' with form_dict=fd %}
+                                        {% include 'server/forms/fields_form.html' with form_dict=fd %}
                                     </div>
                                 {% endwith %}
                             {% endfor %}

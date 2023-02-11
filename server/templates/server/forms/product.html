@@ -28,6 +28,6 @@
     <h5>{{ form_dict.name }} Fields</h5>
     <form action='/update/' method='post'>
         {% csrf_token %}
-        {% include 'server/fields_form.html' %}
+        {% include 'server/forms/fields_form.html' %}
     </form>
 {% endblock %}

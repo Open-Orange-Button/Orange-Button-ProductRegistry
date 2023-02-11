@@ -109,6 +109,14 @@ class CertificationAgency(Form):
     pass
 
 
+class DCInput(Form):
+    pass
+
+
+class DCOutput(Form):
+    pass
+
+
 class Dimension(Form):
     pass
 
@@ -117,7 +125,15 @@ class ModuleElectRating(Form):
     pass
 
 
-class ProdCell(Form):
+class Product(Form):
+    pass
+
+
+class ProdBattery(Product):
+    pass
+
+
+class ProdCell(Product):
     pass
 
 
@@ -126,10 +142,6 @@ class ProdCertification(Form):
 
 
 class ProdGlazing(Form):
-    pass
-
-
-class Product(Form):
     pass
 
 

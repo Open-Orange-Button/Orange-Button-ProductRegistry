@@ -13,17 +13,6 @@ class ListProdModule(generic.ListView):
     queryset = models.ProdModule.objects.all()[800:800+20]
 
 
-def get_prodmodule(kwargs):
-    match kwargs:
-        case {'uuid': ProdID_Value}:
-            query = dict(ProdID_Value=ProdID_Value)
-        case {'ProdCode_Value': ProdCode_Value}:
-            query = dict(ProdCode_Value=ProdCode_Value)
-        case _:
-            query = dict(id=None)
-    return shortcuts.get_object_or_404(models.ProdModule, **query)
-
-
 def get_product_id(kwargs):
     match kwargs:
         case {'uuid': ProdID_Value}:
@@ -61,20 +50,39 @@ def get_form_dict(name, d, parent_name=''):
     return form_dict
 
 
-def updateviewprodmodule(request, **kwargs):
+def product_list(request, **kwargs):
+    products = models.Product.objects.values(
+        'ProdType_Value',
+        'ProdMfr_Value',
+        'ProdName_Value',
+        'ProdCode_Value',
+        'ProdID_Value'
+    ).exclude(id__in=models.ProdCell.objects.values_list('id', flat=True))[80:100]
+    return shortcuts.render(
+        request,
+        'server/product_list.html',
+        context=dict(
+            products=products
+        )
+    )
+
+
+def product_detail(request, **kwargs):
     if request.method == 'POST':
         pass
     else:
-        res = list(serializers.serialize_by_ids('ProdModule', ids=[get_product_id(kwargs)]).values())[0]
-        form_dict = get_form_dict('ProdModule', res)
-    return shortcuts.render(
-        request,
-        'server/prodmodule_form.html',
-        context=dict(
-            product=res,
-            form_dict=form_dict
-        )
-    )
+        for p in obit.get_schema_subclasses('Product'):
+            if len(res := list(serializers.serialize_by_ids(p, ids=[get_product_id(kwargs)]).values())) > 0:
+                product = res[0]
+                form_dict = get_form_dict(p, product)
+                return shortcuts.render(
+                    request,
+                    'server/forms/product.html',
+                    context=dict(
+                        product=product,
+                        form_dict=form_dict
+                    )
+                )
 
 
 def get_prod_type_by_fields(fields):
@@ -185,7 +193,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         product = shortcuts.get_object_or_404(models.Product, **{self.lookup_field: kwargs[self.lookup_field]})
         for p in obit.get_schema_subclasses('Product'):
-            if len(res := list(serializers.serialize_by_ids(p, [product.id]).values())) != 0:
+            if len(res := list(serializers.serialize_by_ids(p, [product.id]).values())) > 0:
                 return response.Response(res[0])
 
     def list(self, request, *args, **kwargs):
