@@ -10,23 +10,27 @@
     <table class='table'>
         <thead>
             <tr>
+                <th scope='col'>ProdType</th>
                 <th scope='col'>ProdMfr</th>
                 <th scope='col'>ProdName</th>
+                <th scope='col'>Description</th>
                 <th scope='col'>ProdCode</th>
                 <th scope='col'>ProdID</th>
             </tr>
         </thead>
         <tbody>
             <tr>
+                <td>{{ product.ProdType.Value }}</td>
                 <td>{{ product.ProdMfr.Value }}</td>
                 <td>{{ product.ProdName.Value }}</td>
+                <td>{{ product.Description.Value }}</td>
                 <td>{{ product.ProdCode.Value }}</td>
                 <td>{{ product.ProdID.Value }}</td>
             </tr>
         </tbody>
     </table>
     <h5>{{ form_dict.name }} Fields</h5>
-    <form action='/update/' method='post'>
+    <form action='#' method='post'>
         {% csrf_token %}
         {% include 'server/forms/fields_form.html' %}
     </form>

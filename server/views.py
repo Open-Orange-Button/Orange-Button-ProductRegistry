@@ -1,9 +1,9 @@
 from collections import OrderedDict
 
 from django import shortcuts
+from django.core import paginator
 from django.views import generic
-from rest_framework import viewsets, response
-from rest_framework import decorators
+from rest_framework import viewsets, response, decorators
 
 from server import models, ob_item_types as obit, serializers, forms
 
@@ -57,12 +57,12 @@ def product_list(request, **kwargs):
         'ProdName_Value',
         'ProdCode_Value',
         'ProdID_Value'
-    ).exclude(id__in=models.ProdCell.objects.values_list('id', flat=True))[80:100]
+    ).exclude(id__in=models.ProdCell.objects.values_list('id', flat=True))
     return shortcuts.render(
         request,
         'server/product_list.html',
         context=dict(
-            products=products
+            page_products=paginator.Paginator(products, 20).get_page(request.GET.get('page'))
         )
     )
 

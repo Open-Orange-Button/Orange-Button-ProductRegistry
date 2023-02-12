@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block main %}
+    {% include 'server/pagination.html' with page=page_products justify_content='justify-content-end' %}
     <table class='table'>
         <thead>
             <tr>
@@ -16,7 +17,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for p in products %}
+            {% for p in page_products %}
                 <tr>
                     <td>{{ p.ProdType_Value }}</td>
                     <td>{{ p.ProdMfr_Value }}</td>
@@ -30,4 +31,6 @@
                 </tr>
             {% endfor %}
         </tbody>
+    </table>
+    {% include 'server/pagination.html' with page=page_products justify_content='justify-content-end' %}
 {% endblock %}
