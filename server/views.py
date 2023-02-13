@@ -2,15 +2,9 @@ from collections import OrderedDict
 
 from django import shortcuts
 from django.core import paginator
-from django.views import generic
 from rest_framework import viewsets, response, decorators
 
 from server import models, ob_item_types as obit, serializers, forms
-
-
-class ListProdModule(generic.ListView):
-    model = models.ProdModule
-    queryset = models.ProdModule.objects.all()[800:800+20]
 
 
 def get_product_id(kwargs):
@@ -57,7 +51,7 @@ def product_list(request, **kwargs):
         'ProdName_Value',
         'ProdCode_Value',
         'ProdID_Value'
-    ).exclude(id__in=models.ProdCell.objects.values_list('id', flat=True))
+    ).exclude(id__in=models.ProdCell.objects.values_list('id', flat=True)).order_by('id')
     return shortcuts.render(
         request,
         'server/product_list.html',

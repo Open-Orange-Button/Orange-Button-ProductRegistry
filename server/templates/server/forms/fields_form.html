@@ -1,4 +1,4 @@
-{% include 'server/forms/fields_table.html' with form=form_dict.form %}
+{% include 'server/forms/field_tables.html' with form=form_dict.form %}
 <div class='accordion'>
     {% for fd in form_dict.object_form_dicts %}
         {% with accordion_id=fd.form.prefix %}

@@ -91,8 +91,6 @@ DATABASES = {
             'CHARSET': 'utf8mb4',
             'COLLATION': 'utf8mb4_0900_as_cs'
         }
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -148,6 +146,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Deployment settings
 
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False  # an nginx proxy server can ensure HTTPS
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

@@ -1,6 +1,37 @@
+from collections import OrderedDict
+import itertools
+
 from django import forms
+from django import template
 
 from server import ob_item_types as obit, models
+
+
+WIDGET_READONLY_ATTRS = {
+    'readonly': 'true',
+    'disabled': 'true',
+    'class': 'form-control-plaintext',
+    'style': '-webkit-appearance: none'  # hide the dropdown arrow of choice fields
+}
+
+
+@template.defaulttags.register.filter(name='dictkey')
+def dictkey(d, k):
+    return d[k]
+
+
+@template.defaulttags.register.filter
+def render_primitive_readonly(bound_field, primitive):
+    subwidgets_dict = bound_field.field.widget.subwidgets_dict
+    if primitive not in subwidgets_dict:
+        return ''
+    subwidget = bound_field.field.widget.subwidgets_dict[primitive]
+    field_values = bound_field.value().copy()
+    if subwidget.__class__ is forms.NumberInput and (v := field_values[primitive]) is not None:
+        field_values[primitive] = round(v, 4)
+    context = bound_field.field.widget.get_context(bound_field.html_name, field_values, attrs=WIDGET_READONLY_ATTRS)
+    subwidget_context = context['widget']['subwidgets_dict'][primitive]
+    return forms.boundfield.BoundWidget(subwidget, subwidget_context, bound_field.form.renderer)
 
 
 class WidgetDate(forms.DateInput):
@@ -14,7 +45,8 @@ class WidgetDateTime(forms.DateTimeInput):
 class WidgetOBElement(forms.MultiWidget):
     template_name = 'server/forms/widgets/multiwidget_obelement.html'
 
-    def __init__(self, widgets, attrs=None):
+    def __init__(self, widgets: dict, attrs=None):
+        self.subwidgets_dict = widgets
         super().__init__(widgets, attrs)
 
     def get_context(self, name, value, attrs):
@@ -52,14 +84,10 @@ class OBElement(forms.MultiValueField):
         super().__init__(error_messages=error_messages, fields=fields, require_all_fields=False, **kwargs)
 
     def set_readonly(self, readonly: bool):
-        field_widgets = {}
+        field_widgets = OrderedDict()
         for p, f in zip(self.ob_element.primitives(), self.fields):
             if readonly:
-                f.widget.attrs.update({
-                    'readonly': 'true',
-                    'disabled': 'true',
-                    'class': 'form-control-plaintext'
-                })
+                f.widget.attrs.update(WIDGET_READONLY_ATTRS)
             else:
                 attrs = dict({'class': 'form-control'})
                 match f:
@@ -78,6 +106,7 @@ class OBElement(forms.MultiValueField):
 
 class FormMetaclass(forms.forms.DeclarativeFieldsMetaclass):
     def __new__(cls, name, bases, attrs):
+        attrs['field_groups'] = attrs.get('field_groups', OrderedDict())
         if name != 'Form':
             match obit.get_schema_type(name):
                 case obit.OBType.Element:
@@ -100,9 +129,17 @@ class Form(forms.Form, metaclass=FormMetaclass):
         super().__init__(*args, **kwargs)
         for f in self.fields.values():
             f.set_readonly(readonly)
+        if not self.field_groups:
+            self.field_groups[''] = tuple(sorted(self.fields))
 
     def get_initial_for_field(self, field, field_name):
         return self.initial[field_name]
+
+    def fields_not_in_field_group(self):
+        return tuple(
+            e for e in obit.elements_of_ob_object(self.__class__.__name__)
+            if e not in itertools.chain(*self.field_groups.values())
+        )
 
 
 class CertificationAgency(Form):
@@ -126,15 +163,32 @@ class ModuleElectRating(Form):
 
 
 class Product(Form):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.field_groups = OrderedDict([
+            ('Product Information', (
+                'ProdType',
+                'ProdMfr',
+                'ProdName',
+                'Description',
+                'ProdDatasheet',
+                'FileFolderURL',
+                'ProdCode',
+                'ProdID'
+            ))
+        ])
 
 
 class ProdBattery(Product):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.field_groups['Details'] = tuple(sorted(self.fields_not_in_field_group()))
 
 
 class ProdCell(Product):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.field_groups['Details'] = tuple(sorted(self.fields_not_in_field_group()))
 
 
 class ProdCertification(Form):
@@ -146,4 +200,15 @@ class ProdGlazing(Form):
 
 
 class ProdModule(Product):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.field_groups['Certifications'] = (
+            'CECListingDate',
+            'CECNotes',
+            'JunctionBoxProtectionCertification'
+        )
+        self.field_groups['Power/Product Warranties'] = (
+            'PowerWarranty',
+            'ProductWarranty'
+        )
+        self.field_groups['Details'] = tuple(sorted(self.fields_not_in_field_group()))

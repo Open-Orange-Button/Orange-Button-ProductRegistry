@@ -1,0 +1,36 @@
+{% for group_name, field_names in form.field_groups.items %}
+    <h4>{{ group_name }}</h4>
+    <table class='table'>
+        <thead>
+            <tr>
+                <th scope='col'>Field</th>
+                <th scope='col'>Value</th>
+                <th scope='col'>Unit</th>
+                <th scope='col'></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name in field_names %}
+                {% with field=form|dictkey:name %}
+                    <tr>
+                        <th scope='row'>{{ field.name }}</th>
+                        <td>{{ field|render_primitive_readonly:'Value' }}</td>
+                        <td>{{ field|render_primitive_readonly:'Unit' }}</td>
+                        <td>
+                            <button class='btn btn-secondary' type='button' data-bs-toggle='collapse' data-bs-target='#collapse-details-{{ field.name|lower }}' aria-expanded='false' aria-controls='collapse-{{ field.name|lower }}'>
+                                Show More
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan='4' id='collapse-details-{{ field.name|lower }}' class='collapse' style='transition: none'>
+                            <div class='card'>
+                                {{ field }}
+                            </div>
+                        </td>
+                    </tr>
+                {% endwith %}
+            {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}

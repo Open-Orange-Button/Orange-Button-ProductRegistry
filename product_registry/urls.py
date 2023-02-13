@@ -18,5 +18,6 @@ from django import urls
 
 urlpatterns = [
     urls.path('admin/', admin.site.urls),
-    urls.path('', urls.include('server.urls'))
+    urls.path('', urls.include(('server.urls', 'server'), namespace='webpage')),
+    urls.path('api/v1/', urls.include(('server.urls_api', 'server'), namespace='api'))
 ]
