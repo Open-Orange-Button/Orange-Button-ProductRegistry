@@ -40,9 +40,6 @@
       "Product": {
         "type": "object",
         "properties": {
-          "ProdID": {
-            "$ref": "#/components/schemas/ProdID"
-          },
           "ProdName": {
             "$ref": "#/components/schemas/ProdName"
           },
@@ -84,6 +81,9 @@
           },
           "AlternativeIdentifiers": {
             "$ref": "#/components/schemas/AlternativeIdentifiers"
+          },
+          "ProdID": {
+            "$ref": "#/components/schemas/ProdID"
           }
         },
         "x-ob-usage-tips": ""
@@ -1628,7 +1628,9 @@
             "description": "Name of utility company where the grid connection will reside.",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "Arizona Public Service"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -2338,7 +2340,9 @@
             "description": "The output phase type of a device",
             "x-ob-item-type": "InterconnectionPhaseTypeItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "Single"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -2724,7 +2728,7 @@
           {
             "type": "object",
             "description": "The date of the Checklist",
-            "x-ob-item-type": "DateItemType",
+            "x-ob-item-type": "DateTimeItemType",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
               "EndTime": "2011-10-05T16:48:00.000Z",
@@ -3275,6 +3279,9 @@
           },
           "FirmwareVersions": {
             "$ref": "#/components/schemas/FirmwareVersions"
+          },
+          "CertificationStandard": {
+            "$ref": "#/components/schemas/CertificationStandard"
           }
         }
       },
@@ -3990,7 +3997,9 @@
             "description": "A quantity",
             "x-ob-item-type": "IntegerItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": 10
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -4454,7 +4463,9 @@
             "description": "Universally unique identifier for the site.",
             "x-ob-item-type": "UUIDItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "de35e71d-98de-422c-bae9-290b0c00338d"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -4907,7 +4918,9 @@
             "description": "Description of mandatory requirements for access to the site, such as background checks.",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "Gate code: 1234"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5032,7 +5045,9 @@
             "description": "Name of the product, for example ABC Brand Inverter.",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "Q.PEAK DUO BLK-G10+/AC 360-365"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5294,7 +5309,9 @@
             "description": "Name of the product or equipment manufacturer.",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "Hanwha"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5381,10 +5398,12 @@
           },
           {
             "type": "object",
-            "description": "A product code is a standardized, unique human-readable identifier that is compact,and can be easily parsed. It consists of an entity code concatenated to a product specific identification string, separated by a hyphen. A product string is up to 16 characters, comprised of upper case letters, number, and hyphens (Ã¢â‚¬Ëœ-Ã¢â‚¬Ëœ).\nThe format of a product code is:\n[EntityCode]-[ProductString], e.g., UEE-E2000-3-XFM for company Universal Energy Enterprises with Entity Code UEE and Product String of E2000-3-XFM.    ",
+            "description": "A product code is a standardized, unique human-readable identifier that is compact,and can be easily parsed. It consists of an entity code concatenated to a product specific identification string, separated by a hyphen. A product string is comprised of upper case letters, number, and hyphens. The format of a product code is:[EntityCode]-[ProductString], e.g., UEE-E2000-3-XFM for company Universal Energy Enterprises with Entity Code UEE and Product String of E2000-3-XFM.    ",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "SMA-SB7-7-1SP-US-41-NWF"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5462,7 +5481,9 @@
             "description": "Date of last calibration",
             "x-ob-item-type": "DateItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "22-02-22"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5524,7 +5545,9 @@
             "description": "Assessors parcel number, or APN, which is a number assigned to parcels of real property by the tax assessor of a particular jurisdiction for purposes of identification and record-keeping.",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "0562 08020006A1"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5653,7 +5676,9 @@
             "description": "Name of the site.",
             "x-ob-item-type": "StringItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "Proj: 1234"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -5722,7 +5747,9 @@
             "description": "Identifier of the municipal authority, for example, town, city or county, that has jurisdiction to define local code requirements.",
             "x-ob-item-type": "UUIDItemType",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {},
+            "x-ob-sample-value": {
+              "Value": "15e50b0b-998b-4079-a276-d46f91fa897a"
+            },
             "x-ob-item-type-group": ""
           }
         ]
@@ -6337,6 +6364,9 @@
               },
               "CECListingDate": {
                 "$ref": "#/components/schemas/CECListingDate"
+              },
+              "IsCECListed": {
+                "$ref": "#/components/schemas/IsCECListed"
               }
             }
           }
@@ -6503,7 +6533,9 @@
             "x-ob-item-type": "UUIDItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "82b2f9ea-0a88-464f-80ef-6712662eef68"
+            }
           }
         ]
       },
@@ -6515,10 +6547,12 @@
           {
             "type": "object",
             "description": "Date of a comment",
-            "x-ob-item-type": "DateItemType",
+            "x-ob-item-type": "DateTimeItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "2022-12-28T19:49:26Z"
+            }
           }
         ]
       },
@@ -6533,7 +6567,9 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "10 gauge wire is required for this project."
+            }
           }
         ]
       },
@@ -7300,32 +7336,28 @@
               },
               "CECListingDate": {
                 "$ref": "#/components/schemas/CECListingDate"
+              },
+              "IsCECListed": {
+                "$ref": "#/components/schemas/IsCECListed"
               }
             }
           }
         ]
       },
       "ProdCell": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Product"
+        "type": "object",
+        "description": "A subcomponent of a ProdModule.",
+        "properties": {
+          "CellColor": {
+            "$ref": "#/components/schemas/CellColor"
           },
-          {
-            "type": "object",
-            "description": "A subcomponent of a ProdModule",
-            "properties": {
-              "CellColor": {
-                "$ref": "#/components/schemas/CellColor"
-              },
-              "CellCutType": {
-                "$ref": "#/components/schemas/CellCutType"
-              },
-              "CellTechnologyType": {
-                "$ref": "#/components/schemas/CellTechnologyType"
-              }
-            }
+          "CellCutType": {
+            "$ref": "#/components/schemas/CellCutType"
+          },
+          "CellTechnologyType": {
+            "$ref": "#/components/schemas/CellTechnologyType"
           }
-        ]
+        }
       },
       "ProdGlazing": {
         "type": "object",
@@ -7604,7 +7636,7 @@
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
-              "Value": "03/18/2022"
+              "Value": "2022-3-18"
             }
           }
         ]
@@ -7620,7 +7652,9 @@
             "x-ob-item-type": "DateItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "2022-4-21"
+            }
           }
         ]
       },
@@ -7635,7 +7669,9 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "SunSpec Modbus for IEEE 1547"
+            }
           }
         ]
       },
@@ -9619,7 +9655,7 @@
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
-              "Value": "12/25/2021"
+              "Value": "2021-12-25"
             }
           }
         ]
@@ -9652,7 +9688,9 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "120EA8A25E5D487BF68B5F7096440019"
+            }
           }
         ]
       },
@@ -9689,7 +9727,7 @@
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
-              "Value": "02/22/2022"
+              "Value": "2022-02-22"
             }
           }
         ]
@@ -9963,6 +10001,9 @@
               },
               "DisplayDescription": {
                 "$ref": "#/components/schemas/DisplayDescription"
+              },
+              "IsCECListed": {
+                "$ref": "#/components/schemas/IsCECListed"
               }
             }
           }
@@ -10153,7 +10194,7 @@
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
-              "Value": "\"945d3284-145f-4edd-a062-9d8daddd3b4b\""
+              "Value": "945d3284-145f-4edd-a062-9d8daddd3b4b"
             }
           }
         ]
@@ -10496,7 +10537,9 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "82b2f9ea-0a88-464f-80ef-6712662eef68"
+            }
           }
         ]
       },
@@ -10511,7 +10554,9 @@
             "x-ob-item-type": "ScopeTypeItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "Site"
+            }
           }
         ]
       },
@@ -10620,7 +10665,9 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "82b2f9ea-0a88-464f-80ef-6712662eef68"
+            }
           }
         ]
       },
@@ -10756,7 +10803,9 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
-            "x-ob-sample-value": {}
+            "x-ob-sample-value": {
+              "Value": "For installations under single management, where documented safe switching procedures are established and maintained for disconnection, and where the installation is monitored by qualified individuals, the disconnecting means shall be permitted to be located elsewhere on the premises."
+            }
           }
         ]
       },
@@ -11169,6 +11218,9 @@
           },
           "ForecastEnergyModels": {
             "$ref": "#/components/schemas/ForecastEnergyModels"
+          },
+          "PerformanceIndexes": {
+            "$ref": "#/components/schemas/PerformanceIndexes"
           }
         },
         "x-ob-usage-tips": "Use EnergyAC for total energy production over the report period, and use Production to contain arrays of measured energy, power, etc. Use ExpectedEnergyModel for modeled energy over the report period calculated from observed weather, and use ForecastEnergyModels for modeled energy using other weather sources (e.g., TMY)."
@@ -11524,6 +11576,55 @@
           "$ref": "#/components/schemas/ForecastEnergyModel"
         }
       },
+      "Insurer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "type": "object",
+            "description": "A person or company that underwrites an insurance risk; the party in an insurance contract undertaking to pay compensation.",
+            "properties": {
+              "InsurerName": {
+                "$ref": "#/components/schemas/InsurerName"
+              }
+            }
+          }
+        ]
+      },
+      "InsurerName": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementString"
+          },
+          {
+            "type": "object",
+            "description": "Name of Insurer.",
+            "x-ob-item-type": "StringItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {
+              "Value": "John Smith"
+            }
+          }
+        ]
+      },
+      "Owner": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "type": "object",
+            "description": "Individual or entity that owns property.",
+            "properties": {
+              "OwnerName": {
+                "$ref": "#/components/schemas/OwnerName"
+              }
+            }
+          }
+        ]
+      },
       "AnswerRangeMin": {
         "allOf": [
           {
@@ -11537,6 +11638,23 @@
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
               "Value": 40
+            }
+          }
+        ]
+      },
+      "OwnerName": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementString"
+          },
+          {
+            "type": "object",
+            "description": "Name of the Owner",
+            "x-ob-item-type": "StringItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {
+              "Value": "John Smith"
             }
           }
         ]
@@ -11558,6 +11676,126 @@
           }
         ]
       },
+      "PerformanceIndex": {
+        "type": "object",
+        "description": "Contains various performance indexes and information supporting these values.",
+        "properties": {
+          "PerformanceIndexEnergy": {
+            "$ref": "#/components/schemas/PerformanceIndexEnergy"
+          },
+          "PerformanceIndexPower": {
+            "$ref": "#/components/schemas/PerformanceIndexPower"
+          },
+          "EnergyAC": {
+            "$ref": "#/components/schemas/EnergyAC"
+          },
+          "EnergyACModeled": {
+            "$ref": "#/components/schemas/EnergyACModeled"
+          },
+          "PowerAC": {
+            "$ref": "#/components/schemas/PowerAC"
+          },
+          "EnergyModelID": {
+            "$ref": "#/components/schemas/EnergyModelID"
+          },
+          "PowerACCorrected": {
+            "$ref": "#/components/schemas/PowerACCorrected"
+          },
+          "PowerACModeled": {
+            "$ref": "#/components/schemas/PowerACModeled"
+          },
+          "PowerCorrFactor": {
+            "$ref": "#/components/schemas/PowerCorrFactor"
+          },
+          "FileFolderURL": {
+            "$ref": "#/components/schemas/FileFolderURL"
+          },
+          "Comments": {
+            "$ref": "#/components/schemas/Comments"
+          }
+        }
+      },
+      "PerformanceIndexEnergy": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementNumber"
+          },
+          {
+            "type": "object",
+            "description": "The ratio of actual energy to modeled energy.",
+            "x-ob-item-type": "DecimalItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {}
+          }
+        ]
+      },
+      "PerformanceIndexPower": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementNumber"
+          },
+          {
+            "type": "object",
+            "description": "The ratio of actual AC power to modeled AC power",
+            "x-ob-item-type": "DecimalItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {}
+          }
+        ]
+      },
+      "PowerACModeled": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementNumber"
+          },
+          {
+            "type": "object",
+            "description": "AC power determined by a model.",
+            "x-ob-item-type": "PowerItemType",
+            "x-ob-item-type-group": "OBElectricalPower",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {}
+          }
+        ]
+      },
+      "PowerACCorrected": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementNumber"
+          },
+          {
+            "type": "object",
+            "description": "Modeled AC power multiplied by a correction factor to account for the difference between modeled and actual conditions.",
+            "x-ob-item-type": "PowerItemType",
+            "x-ob-item-type-group": "OBElectricalPower",
+            "x-ob-usage-tips": "Use PowerCorrFactor to record the correction factor.",
+            "x-ob-sample-value": {}
+          }
+        ]
+      },
+      "PowerCorrFactor": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementNumber"
+          },
+          {
+            "type": "object",
+            "description": "A correction factor that is applied to modeled AC power to account for differences between modeled and actual weather.",
+            "x-ob-item-type": "DecimalItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {}
+          }
+        ]
+      },
+      "PerformanceIndexes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PerformanceIndex"
+        }
+      },
       "ProdID": {
         "allOf": [
           {
@@ -11565,12 +11803,46 @@
           },
           {
             "type": "object",
-            "description": "Identifier of a Product in the Product Code Registry.",
+            "description": "Unique identifier for the Product.",
             "x-ob-item-type": "UUIDItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
-              "Value": ""
+              "Value": "d522ff95-43c2-41e5-83e1-911c1f3ad81f"
+            }
+          }
+        ]
+      },
+      "CertificationStandard": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementString"
+          },
+          {
+            "type": "object",
+            "description": "A value from the enumerated list of the possible standards that a product can have.",
+            "x-ob-item-type": "StandardTypeItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {
+              "Value": "IEC61215_2016"
+            }
+          }
+        ]
+      },
+      "IsCECListed": {
+        "allOf" : [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementString"
+          },
+          {
+            "type": "object",
+            "description": "Whether the CEC lists a product with a certification.",
+            "x-ob-item-type": "BooleanItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
+            "x-ob-sample-value": {
+              "Value": true
             }
           }
         ]
@@ -15945,18 +16217,6 @@
           "label": "IEC61215",
           "description": ""
         },
-        "IEC61215_2016": {
-          "label": "IEC61215:2016",
-          "description": ""
-        },
-        "IEC61215_2021": {
-          "label": "IEC61215:2021",
-          "description": ""
-        },
-        "IEC61853_1_2011": {
-          "label": "IEC61853-1:2011",
-          "description": ""
-        },
         "IEC61646": {
           "label": "IEC61646",
           "description": ""
@@ -15979,10 +16239,6 @@
         },
         "UL1703": {
           "label": "UL1703",
-          "description": ""
-        },
-        "UL61730": {
-          "label": "UL61730",
           "description": ""
         },
         "Other": {
@@ -16989,6 +17245,150 @@
           "description": "Building integrated PV and Storage Installation."
         }
       }
+    },
+    "StandardTypeItemType": {
+      "description": "Standard type for which a specific certification is applied. The UnitID format follows the pattern: document identifier, publication year, section of document, using underscore (_) as a separator. Some standards are published as multiple documents, e.g., IEC 61853 is published in four parts. In these cases the document identifier includes the part, e.g., \"IEC61853_1\", \"IEC61853_2\", etc.\n\nMore precisely the Unit ID is: {standard name/number}_{document part (optional)}_{publication_year}_{document section (optional)}{alpha sequence (optional)}. If the document part is omitted, all parts of the standard are presumed to be included. The alpha sequence (a, b, c, ...) is only used to create distinct Unit IDs where two IDs would be identical without an alpha sequence. ",
+      "enums": {
+        "IEC61215_2016": {
+          "label": "IEC 61215:2016",
+          "description": "Terrestrial photovoltaic (PV) modules - Design qualification and type approval"
+        },
+        "IEC61215_2021": {
+          "label": "IEC 61215:2021",
+          "description": "Terrestrial photovoltaic (PV) modules - Design qualification and type approval"
+        },
+        "IEC61853_1_2011": {
+          "label": "IEC 61853-1:2011",
+          "description": "Photovoltaic (PV) module performance testing and energy rating"
+        },
+        "UL61730_2017": {
+          "label": "UL 61730:2017",
+          "description": "Photovoltaic (PV) Module Safety Qualification"
+        },
+        "UL1741SC_2023": {
+          "label": "UL 1741 SC:2023",
+          "description": "Safety and functional performance standard for electric vehicle supply equipment that must comply with IEEE 1547-2018"
+        },
+        "IEC61646_2008": {
+          "label": "IEC 61646:2008",
+          "description": "Thin-film terrestrial photovoltaic (PV) modules - Design qualification and type approval"
+        },
+        "SAEJ3072_2021": {
+          "label": "SAE J3072:2021",
+          "description": "Interconnection Requirements for Onboard, Grid Support Inverter Systems"
+        },
+        "SAEJ3068_2018": {
+          "label": "SAE J3068:2018",
+          "description": "Electric Vehicle Power Transfer System Using a Three-Phase Capable Coupler"
+        },
+        "IEC61701_2020": {
+          "label": "IEC 61701:2020 ",
+          "description": "Photovoltaic (PV) modules - Salt mist corrosion testing"
+        },
+        "IEC61730_2016": {
+          "label": "IEC 61730:2016",
+          "description": "Photovoltaic (PV) module safety qualification"
+        },
+        "IEC60364_4_41_2005": {
+          "label": "IEC60364-4-41:2005",
+          "description": "Low voltage electrical installations - Part 4-41: Protection for safety - Protection against electric shock"
+        },
+        "IEC62108_2022": {
+          "label": "IEC 62108:2022",
+          "description": "Concentrator photovoltaic (CPV) modules and assemblies - Design qualification and type approval"
+        },
+        "IEC61683_1999": {
+          "label": "IEC 61683:1999",
+          "description": "Photovoltaic systems - Power conditioners - Procedure for measuring efficiency"
+        },
+        "IEC62109_1_2010": {
+          "label": "IEC62109-1:2010",
+          "description": "Safety of power converters for use in photovoltaic power systems - Part 1: General requirements"
+        },
+        "IEC62109_2_2011": {
+          "label": "IEC62109-2:2011",
+          "description": "Safety of power converters for use in photovoltaic power systems - Part 2: Particular requirements for inverters"
+        },
+        "IEC61010_1_2010": {
+          "label": "IEC 61010-1:2010",
+          "description": "Safety requirements for electrical equipment for measurement, control, and laboratory use - Part 1: General requirements"
+        },
+        "UL1973_2_2018": {
+          "label": "UL1973 Edition 2: 2018",
+          "description": "Standard For Batteries For Use In Stationary, Vehicle Auxiliary Power And Light Electric Rail (LER) Applications"
+        },
+        "CSIP_2018": {
+          "label": "CSIP Version 2.1:2018",
+          "description": "SunSpec 2030.5 Common Smart Inverter Profile (CSIP) Certification"
+        },
+        "UL1741SB_2021": {
+          "label": "UL1741SB:2021",
+          "description": "Inverters, Converters, Controllers and Interconnection System Equipment for Use With Distributed Energy Resources"
+        },
+        "UL1741SA_2021": {
+          "label": "UL 1741SA 2021",
+          "description": "Standard for Inverters, Converters, Controllers and Interconnection System Equipment for Use with Distributed Energy Resources"
+        },
+        "UL1741SA_2021_8": {
+          "label": "UL1741 Supplement A 2021 Section 8",
+          "description": ""
+        },
+        "UL1741SA_2021_9": {
+          "label": "UL1741 Supplement A 2021 Section 9",
+          "description": ""
+        },
+        "UL1741SA_2021_10": {
+          "label": "UL1741 Supplement A 2021 Section 10",
+          "description": ""
+        },
+        "UL1741SA_2021_11": {
+          "label": "UL1741 Supplement A 2021 Section 11",
+          "description": ""
+        },
+        "UL1741SA_2021_12": {
+          "label": "UL1741 Supplement A 2021 Section 12",
+          "description": ""
+        },
+        "UL1741SA_2021_13": {
+          "label": "UL1741 Supplement A 2021 Section 13",
+          "description": ""
+        },
+        "UL1741SA_2021_14": {
+          "label": "UL1741 Supplement A 2021 Section 14",
+          "description": ""
+        },
+        "UL1741SA_2021_15": {
+          "label": "UL1741 Supplement A 2021 Section 15",
+          "description": ""
+        },
+        "UL1741SA_2021_17": {
+          "label": "UL1741 Supplement A 2021 Section 17",
+          "description": ""
+        },
+        "UL1741SA_2021_18": {
+          "label": "UL1741 Supplement A 2021 Section 18",
+          "description": ""
+        },
+        "UL1703_2002": {
+          "label": "UL 1703:2002",
+          "description": "UL Standard for Safety for Flat-Plate Photovoltaic Modules and Panels"
+        },
+        "UL9540_2016": {
+          "label": "UL 9540:2016",
+          "description": "Energy Storage System (ESS) Requirements"
+        },
+        "UL9540_2020": {
+          "label": "UL 9540:2020",
+          "description": "Energy Storage Systems and Equipment"
+        },
+        "JA12_2019": {
+          "label": "Joint Appendix 12 : 2019",
+          "description": "Qualification Requirements for Battery Storage System "
+        }
+      }
+    },
+    "DateTimeItemType": {
+      "description": "ISO-8601 formatted date/time string."
     }
   },
   "x-ob-item-type-groups": {

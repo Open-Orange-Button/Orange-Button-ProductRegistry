@@ -131,7 +131,7 @@ class ProdBattery(Product):
     pass
 
 
-class ProdCell(Product):
+class ProdCell(Model):
     pass
 
 

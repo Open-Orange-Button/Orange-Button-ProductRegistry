@@ -209,7 +209,7 @@ class OBElement:
 
     def _Decimals_field(self):
         return models.PositiveIntegerField(self.verbose_model_field_name(Primitive.Decimals),
-                                   blank=True, null=True)
+                                           blank=True, null=True)
 
     def _EndTime_field(self):
         return models.DateTimeField(self.verbose_model_field_name(Primitive.EndTime),
@@ -217,7 +217,7 @@ class OBElement:
 
     def _Precision_field(self):
         return models.PositiveIntegerField(self.verbose_model_field_name(Primitive.Precision),
-                                   blank=True, null=True)
+                                           blank=True, null=True)
 
     def _StartTime_field(self):
         return models.DateTimeField(self.verbose_model_field_name(Primitive.StartTime),
@@ -302,6 +302,10 @@ class OBElement:
                 field_kwargs = dict(blank=True, null=True)
                 field_kwargs.update(self.Value_opts)
                 return models.DateField(verbose_name, **field_kwargs)
+            case ItemTypeName.DateTimeItemType:
+                field_kwargs = dict(blank=True, null=True)
+                field_kwargs.update(self.Value_opts)
+                return models.DateTimeField(verbose_name, **field_kwargs)
             case ItemTypeName.UUIDItemType:
                 field_kwargs = dict(
                     unique=True, editable=False, default=uuid.uuid4,
