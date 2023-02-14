@@ -63,7 +63,6 @@ class WidgetOBElement(forms.MultiWidget):
             prim[1:]: sw_context
             for prim, sw_context in zip(self.widgets_names, context['widget']['subwidgets'])
         }
-        print(context)
         return context
 
     def decompress(self, value):
@@ -71,7 +70,6 @@ class WidgetOBElement(forms.MultiWidget):
 
     def render(self, name, value, attrs=None, renderer=None):
         r = super().render(name, value, attrs=attrs, renderer=renderer)
-        print(r)
         return r
 
 
@@ -201,6 +199,7 @@ class ProdModule(Product):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.field_groups['Certifications'] = (
+            'IsCECListed',
             'CECListingDate',
             'CECNotes',
             'JunctionBoxProtectionCertification'

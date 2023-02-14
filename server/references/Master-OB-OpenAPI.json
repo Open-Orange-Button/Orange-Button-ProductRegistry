@@ -11830,7 +11830,7 @@
       "IsCECListed": {
         "allOf" : [
           {
-            "$ref": "#/components/schemas/TaxonomyElementString"
+            "$ref": "#/components/schemas/TaxonomyElementBoolean"
           },
           {
             "type": "object",

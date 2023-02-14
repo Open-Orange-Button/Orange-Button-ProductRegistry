@@ -291,6 +291,7 @@ MODULE_TO_OB_FIELD = OrderedDict([
 
 MODULE_EXTRA_DEFAULTS = OrderedDict([
     ('ProdModule.ProdType_Value', 'Module'),
+    ('ProdModule.IsCECListed_Value', True),
     ('ProdModule.ProdGlazing.Height_Value', None),
 ])
 
