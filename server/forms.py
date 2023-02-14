@@ -185,10 +185,8 @@ class ProdBattery(Product):
         self.field_groups['Details'] = tuple(sorted(self.fields_not_in_field_group()))
 
 
-class ProdCell(Product):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.field_groups['Details'] = tuple(sorted(self.fields_not_in_field_group()))
+class ProdCell(Form):
+    pass
 
 
 class ProdCertification(Form):

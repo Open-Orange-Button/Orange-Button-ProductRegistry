@@ -51,7 +51,7 @@ def product_list(request, **kwargs):
         'ProdName_Value',
         'ProdCode_Value',
         'ProdID_Value'
-    ).exclude(id__in=models.ProdCell.objects.values_list('id', flat=True)).order_by('id')
+    ).order_by('id')
     return shortcuts.render(
         request,
         'server/product_list.html',

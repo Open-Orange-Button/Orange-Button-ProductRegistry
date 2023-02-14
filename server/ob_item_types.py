@@ -15,7 +15,7 @@ from django_mysql import models as mysql_models
 
 NAME_LEN = 100
 STR_LEN = 500
-URL_LEN = 1000
+URL_LEN = 2048
 TIME_STR_LEN = 100
 DECIMAL_PLACES = 20
 DECIMAL_MAX_DIGITS = DECIMAL_PLACES * 2

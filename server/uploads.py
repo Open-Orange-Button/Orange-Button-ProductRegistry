@@ -4,8 +4,7 @@ from pathlib import Path
 import re
 
 from django.apps import apps
-from django.db import models, transaction, utils
-from django.core import exceptions
+from django.db import models, transaction
 
 import flatten_json
 import pandas as pd
@@ -14,6 +13,10 @@ from tqdm import tqdm
 
 
 DATA_DIR = Path(__file__).parent / 'data'
+
+COMPANY_CODES_XLSX = DATA_DIR / 'COMPANY CODES.xlsx'
+
+COMPANY_CODES = pd.read_excel(COMPANY_CODES_XLSX)
 
 BATTERY_XLSX = DATA_DIR / 'Battery_List_Data_ADA.xlsx'
 
@@ -54,7 +57,7 @@ BATTERY_TO_OB_FIELD = OrderedDict([
         'ProdBattery.ProdCertification.0.CertificationDate_Value',
     )),
     ('Edition of UL 1973', (
-        'ProdBattery.ProdCertification.0.CertificationTypeProduct_Value',
+        'ProdBattery.ProdCertification.0.CertificationStandard_Value',
     )),
     ('Nameplate Energy Capacity', (
         'ProdBattery.EnergyCapacityNominal_Value',
@@ -79,11 +82,26 @@ BATTERY_EXTRA_DEFAULTS = OrderedDict([
 ])
 
 
+BATTERY_SUNSPEC_MFR_TO_CEC_MFR = OrderedDict([
+    ('Darfon Electronics Corporation', 'Darfon Electronics Corp.'),
+    ('Fortress Power', 'Fortress Power LLC'),
+    ('Holu Hou', 'Holu Hou Energy LLC'),
+    ('LG Electronics Inc.', 'LG Energy Solution, Ltd.'),
+    ('Simpliphi Power', 'SimpliPhi Power, Inc.'),
+    ('SolarEdge Technologies Inc', 'SolarEdge Technologies Ltd.'),
+])
+
+
 def upload_cec_battery():
-    dataframe = pd.read_excel(BATTERY_XLSX, header=None, names=BATTERY_TO_OB_FIELD.keys(), dtype=BATTERY_COLOMN_DTYPES)[12:].replace({np.nan: None})
+    dataframe = (
+        pd.read_excel(BATTERY_XLSX, header=None, names=BATTERY_TO_OB_FIELD.keys(), dtype=BATTERY_COLOMN_DTYPES)[12:]
+        .replace({np.nan: None})
+        .drop_duplicates()
+    )
     upload(
         model_name='ProdBattery',
         dataframe=dataframe,
+        mfr_mapping=BATTERY_SUNSPEC_MFR_TO_CEC_MFR,
         field_mapping=BATTERY_TO_OB_FIELD,
         value_mapping=BATTERY_COLOMN_VALUE_TO_OB_VALUE,
         extra_default_fields=BATTERY_EXTRA_DEFAULTS,
@@ -94,6 +112,7 @@ def upload_cec_battery():
 MODULE_XLSX = DATA_DIR / 'PV_Module_List_Full_Data_ADA.xlsx'
 
 MODULE_COLOMN_DTYPES = {
+    'Model Number': str,
     'Nameplate Pmax': str,
     'PTC': str,
     'A_c': str,
@@ -117,11 +136,11 @@ MODULE_COLOMN_DTYPES = {
 
 MODULE_COLOMN_VALUE_TO_OB_VALUE = (
     ('Description', (None, '')),
-    ('Safety Certification', ('UL 1703', 'UL1703')),
-    ('Safety Certification', ('UL 1703 ', 'UL1703')),
-    ('Safety Certification', ('UL 1741', 'UL1741')),
-    ('Safety Certification', ('UL 61730', 'UL61730')),
-    ('Safety Certification', ('UL 61730 ', 'UL61730')),
+    ('Safety Certification', ('UL 1703', 'UL1703_2002')),
+    ('Safety Certification', ('UL 1703 ', 'UL1703_2002')),
+    ('Safety Certification', ('UL 1741', 'UL1741_2021')),
+    ('Safety Certification', ('UL 61730', 'UL61730_2017')),
+    ('Safety Certification', ('UL 61730 ', 'UL61730_2017')),
     ('Notes', (None, '')),
     ('Design Qualification Certification (Optional Submission)', ('No Information Submitted', None)),
     ('Performance Evaluation (Optional Submission)', ('No Information Submitted', None)),
@@ -136,7 +155,7 @@ MODULE_COLOMN_VALUE_TO_OB_VALUE = (
 )
 
 MODULE_TO_OB_FIELD = OrderedDict([
-    ('Manufacturer', (
+    ('Manufacturer Name', (  # Instead of Manufacturer as in the XLSX
         'ProdModule.ProdMfr_Value',
     )),
     ('Model Number', (
@@ -146,7 +165,7 @@ MODULE_TO_OB_FIELD = OrderedDict([
         'ProdModule.Description_Value',
     )),
     ('Safety Certification', (
-        'ProdModule.ProdCertification.0.CertificationTypeProduct_Value',
+        'ProdModule.ProdCertification.0.CertificationStandard_Value',
         ('ProdModule.ProdCertification.0.CertificationAgency.Description_Value', '')
     )),
     ('Nameplate Pmax', (
@@ -166,12 +185,12 @@ MODULE_TO_OB_FIELD = OrderedDict([
     )),
     ('Design Qualification Certification (Optional Submission)', (
         'ProdModule.ProdCertification.1.CertificationDate_Value',
-        ('ProdModule.ProdCertification.1.CertificationTypeProduct_Value', 'IEC61215_2016'),
+        ('ProdModule.ProdCertification.1.CertificationStandard_Value', 'IEC61215_2016'),
         ('ProdModule.ProdCertification.1.CertificationAgency.Description_Value', '')
     )),
     ('Performance Evaluation (Optional Submission)', (
         'ProdModule.ProdCertification.2.CertificationDate_Value',
-        ('ProdModule.ProdCertification.2.CertificationTypeProduct_Value', 'IEC61853_1_2011'),
+        ('ProdModule.ProdCertification.2.CertificationStandard_Value', 'IEC61853_1_2011'),
         ('ProdModule.ProdCertification.2.CertificationAgency.Description_Value', '')
     )),
     ('Family', tuple()),
@@ -273,17 +292,16 @@ MODULE_TO_OB_FIELD = OrderedDict([
 MODULE_EXTRA_DEFAULTS = OrderedDict([
     ('ProdModule.ProdType_Value', 'Module'),
     ('ProdModule.ProdGlazing.Height_Value', None),
-    ('ProdModule.ProdCell.Dimension.Height_Value', None)
 ])
 
 
 def SafetyCertificationDoubleUL(row):
     prefix = 'ProdModule.ProdCertification'
-    saftey_cert = lambda i: f'{prefix}.{i}.CertificationTypeProduct_Value'
+    saftey_cert = lambda i: f'{prefix}.{i}.CertificationStandard_Value'
     if row[saftey_cert(0)] == 'UL 61730, UL 1703':
-        row[saftey_cert(0)] = 'UL1703'
+        row[saftey_cert(0)] = 'UL1703_2002'
         next_idx = 1 + get_last_idx(row.keys(), prefix)
-        row[saftey_cert(next_idx)] = 'UL61730'
+        row[saftey_cert(next_idx)] = 'UL61730_2017'
         required_1to1_field = f'{prefix}.{next_idx}.CertificationAgency.Description_Value'
         row[required_1to1_field] = ''
 
@@ -293,13 +311,15 @@ def DesignQualificationCertificationOptionalSubmission(row):
     cert_date = f'{prefix}.CertificationDate_Value'
     if row[cert_date] == '4/4/2022 [IEC 61215:2021]':
         row[cert_date] = datetime.date(2022, 4, 4)
-        cert_type = f'{prefix}.CertificationTypeProduct_Value'
+        cert_type = f'{prefix}.CertificationStandard_Value'
         row[cert_type] = 'IEC61215_2021'
+
 
 def RemoveExtremelyLargeCellStringsParallelQuantity(row):
     key = 'ProdModule.CellStringsParallelQuantity_Value'
     if row[key] is not None and row[key] > 1e18:
         row[key] = None
+
 
 MODULE_ROW_SPECIFIC_TRANSFORMS = (
     SafetyCertificationDoubleUL,
@@ -308,11 +328,32 @@ MODULE_ROW_SPECIFIC_TRANSFORMS = (
 )
 
 
+MODULE_SUNSPEC_MFR_TO_CEC_MFR = OrderedDict([
+    ('Caterpillar, Inc.', 'Caterpillar Inc.'),
+    ('Enphase Energy', 'Enphase Energy Inc.'),
+    ('Freedom Forever', 'Freedom Forever Procurement LLC'),
+    ('General Electric Company', 'GE Energy'),
+    ('Hanwha Q-Cells', 'Hanwha Q CELLS'),
+    ('Hanwha Q-Cells', 'Hanwha Q CELLS (Qidong)'),
+    ('Hanwha Q-Cells', 'Hanwha Q CELLS (Qidong) Co., Ltd.'),
+    ('Hanwha Q-Cells', 'Hanwha SolarOne (Qidong)'),
+    ('JinkoSolar Holding Co., Ltd.', 'Jinko Solar Co., Ltd.'),
+    ('SunPower Corporation', 'SunPower'),
+    ('SunPower Corporation', 'Sunpower'),
+    ('Tesla', 'Tesla Inc.'),
+])
+
+
 def upload_cec_module():
-    dataframe = pd.read_excel(MODULE_XLSX, header=None, names=MODULE_TO_OB_FIELD.keys(), dtype=MODULE_COLOMN_DTYPES)[18:].replace({np.nan: None})
+    dataframe = (
+        pd.read_excel(MODULE_XLSX, header=None, names=MODULE_TO_OB_FIELD.keys(), dtype=MODULE_COLOMN_DTYPES)[18:]
+        .replace({np.nan: None})
+        .drop_duplicates()
+    )
     upload(
         model_name='ProdModule',
         dataframe=dataframe,
+        mfr_mapping=MODULE_SUNSPEC_MFR_TO_CEC_MFR,
         field_mapping=MODULE_TO_OB_FIELD,
         value_mapping=MODULE_COLOMN_VALUE_TO_OB_VALUE,
         extra_default_fields=MODULE_EXTRA_DEFAULTS,
@@ -320,9 +361,10 @@ def upload_cec_module():
     )
 
 
-def upload(model_name, dataframe, field_mapping, value_mapping, extra_default_fields,
-           row_specific_transforms):
+def upload(model_name, dataframe, mfr_mapping, field_mapping, value_mapping,
+           extra_default_fields, row_specific_transforms):
     data_cec = dataframe
+    format_ProdCode_Value(data_cec, mfr_mapping)
     for col, (old_val, new_val) in value_mapping:
         convert_val(data_cec, col, old_val, new_val)
     data_cec = [row.to_dict() for _, row in data_cec.iterrows()]
@@ -356,13 +398,36 @@ def upload(model_name, dataframe, field_mapping, value_mapping, extra_default_fi
     dataframe['internal_id'], dataframe['ProdID'] = zip(
         *django_model('Product').objects
         .filter(id__in=product_internal_ids)
-        .exclude(id__in=django_model('ProdCell').objects.values_list('id', flat=True))
         .values_list('id', 'ProdID_Value')
     )
     dataframe = dataframe.set_index('internal_id')
     insertions_filepath = DATA_DIR / f'upload-{model_name}-{datetime.datetime.now()}'
     dataframe.to_csv(insertions_filepath)
     print(f'Wrote insertion info to file! {insertions_filepath}')
+
+
+def format_ProdCode_Value(df, mfr_mapping):
+    # replace special characters with underscore
+    prodcodes = df['Model Number'].map(lambda x: re.sub(r'[^0-9A-Za-z]', '_', x))
+    cec_mfrs = df['Manufacturer Name'].str.strip()
+    # prepend the company code and a hyphen
+    # add the exact match company names to mfr_mapping
+    for v in set(COMPANY_CODES['Name']).intersection(set(cec_mfrs)):
+        mfr_mapping[v] = v
+    for sunspec_mfr, cec_mfr in mfr_mapping.items():
+        for row, _ in df[cec_mfrs == cec_mfr].iterrows():
+            prodcodes[row] = f"{COMPANY_CODES[COMPANY_CODES['Name'] == sunspec_mfr]['Company Code'].iloc[0]}-{prodcodes[row]}"
+    # handle duplicates by appending a hyphen and a number
+    duplicates = prodcodes[prodcodes.duplicated(keep=False)]
+    for v in set(duplicates):
+        for num, (row, _) in enumerate(duplicates[duplicates == v].items()):
+            if '-' in v:
+                # mfr has duplicate model numbers
+                prodcodes[row] = f'{v}-{num+1}'
+            else:
+                # two or more mfrs have same model number, and the company code is unknown
+                prodcodes[row] = f"{cec_mfrs[row]}-{v}"
+    df['Model Number'] = prodcodes
 
 
 def get_last_idx(keys, prefix):

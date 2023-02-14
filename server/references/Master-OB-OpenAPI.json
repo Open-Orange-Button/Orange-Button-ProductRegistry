@@ -3271,9 +3271,6 @@
           "CertificationName": {
             "$ref": "#/components/schemas/CertificationName"
           },
-          "CertificationTypeProduct": {
-            "$ref": "#/components/schemas/CertificationTypeProduct"
-          },
           "CertificateValue": {
             "$ref": "#/components/schemas/CertificateValue"
           },
@@ -17368,6 +17365,10 @@
         "UL1741SA_2021_18": {
           "label": "UL1741 Supplement A 2021 Section 18",
           "description": ""
+        },
+        "UL1741_2021": {
+          "label": "UL1741:2021",
+          "description": "Inverters, Converters, Controllers and Interconnection System Equipment for Use With Distributed Energy Resources"
         },
         "UL1703_2002": {
           "label": "UL 1703:2002",

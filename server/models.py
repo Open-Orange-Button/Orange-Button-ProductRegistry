@@ -100,7 +100,7 @@ class Product(Model):
             max_length=obit.URL_LEN,
             validators=[validators.URLValidator()]
         ),
-        ProdCode=dict(validators=[])  # should have regex validation, and be unique
+        ProdCode=dict(unique=True, validators=[])  # should have regex validation
     )
 
 
