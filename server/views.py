@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from django import shortcuts
+from django.db.models import Q
 from django.core import paginator
 from rest_framework import viewsets, response, decorators
 
@@ -45,17 +46,29 @@ def get_form_dict(name, d, parent_name=''):
 
 
 def product_list(request, **kwargs):
-    products = models.Product.objects.values(
-        'ProdType_Value',
-        'ProdMfr_Value',
-        'ProdName_Value',
-        'ProdCode_Value',
-        'ProdID_Value'
-    ).order_by('id')
+    search_query = request.GET.get('q', '')
+    products = (
+        models.Product.objects.values(
+            'ProdType_Value',
+            'ProdMfr_Value',
+            'ProdName_Value',
+            'ProdCode_Value',
+            'ProdID_Value'
+        )
+        .filter(
+            Q(Description_Value__icontains=search_query)
+            | Q(ProdMfr_Value__icontains=search_query)
+            | Q(ProdName_Value__icontains=search_query)
+            | Q(ProdType_Value__icontains=search_query)
+        )
+        .order_by('id')
+    )
+    search_query = f'?q={search_query}&'
     return shortcuts.render(
         request,
         'server/product_list.html',
         context=dict(
+            search_query=search_query,
             page_products=paginator.Paginator(products, 20).get_page(request.GET.get('page'))
         )
     )

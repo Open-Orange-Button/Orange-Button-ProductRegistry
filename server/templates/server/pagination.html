@@ -1,19 +1,19 @@
 <nav aria-label='list navigation'>
     <ul class='pagination {{ justify_content }}'>
         <li class='page-item {% if not page.has_previous %}disabled{% endif %}'>
-                <a href='?page=1' class='page-link'>&laquo;</a>
+            <a href='{{ query_param_string }}page=1' class='page-link'>&laquo;</a>
             </li>
             <li class='page-item {% if not page.has_previous %}disabled{% endif %}'>
-                <a {% if page.has_previous %}href='?page={{ page.previous_page_number }}'{% endif %} class='page-link'>&lsaquo;</a>
+                <a {% if page.has_previous %}href='{{ query_param_string }}page={{ page.previous_page_number }}'{% endif %} class='page-link'>&lsaquo;</a>
             </li>
         <li class='page-item disabled'>
             <a class='page-link'>{{ page.number }}</a>
         </li>
         <li class='page-item {% if not page.has_next %}disabled{% endif %}'>
-            <a {% if page.has_next %}href='?page={{ page.next_page_number }}{% endif %}' class='page-link'>&rsaquo;</a>
+            <a {% if page.has_next %}href='{{ query_param_string }}page={{ page.next_page_number }}{% endif %}' class='page-link'>&rsaquo;</a>
         </li>
         <li class='page-item {% if not page.has_next %}disabled{% endif %}'>
-            <a href='?page={{ page.paginator.num_pages }}' class='page-link'>&raquo;</a>
+            <a href='{{ query_param_string }}page={{ page.paginator.num_pages }}' class='page-link'>&raquo;</a>
         </li>
     </ul>
 </nav>

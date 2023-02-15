@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block main %}
-    {% include 'server/pagination.html' with page=page_products justify_content='justify-content-end' %}
+    {% include 'server/pagination.html' with page=page_products query_param_string=search_query justify_content='justify-content-end' %}
     <table class='table'>
         <thead>
             <tr>
@@ -24,13 +24,19 @@
                     <td>{{ p.ProdName_Value }}</td>
                     <td>{{ p.ProdCode_Value }}</td>
                     <td>
-                        <a href='/product/{{ p.ProdID_Value }}/' target='_blank' class='btn btn-secondary' type='button'>
+                        <a href="{% url 'webpage:product-detail-prodid' uuid=p.ProdID_Value%}" target='_blank' class='btn btn-secondary' type='button'>
                             View Details
                         </a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan='5'>
+                        <h6>No products matched your search.</h6>
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% include 'server/pagination.html' with page=page_products justify_content='justify-content-end' %}
+    {% include 'server/pagination.html' with page=page_products query_param_string=search_query justify_content='justify-content-end' %}
 {% endblock %}
