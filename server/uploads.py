@@ -82,14 +82,14 @@ BATTERY_EXTRA_DEFAULTS = OrderedDict([
 ])
 
 
-BATTERY_SUNSPEC_MFR_TO_CEC_MFR = OrderedDict([
+BATTERY_SUNSPEC_MFR_TO_CEC_MFR = [
     ('Darfon Electronics Corporation', 'Darfon Electronics Corp.'),
     ('Fortress Power', 'Fortress Power LLC'),
     ('Holu Hou', 'Holu Hou Energy LLC'),
     ('LG Electronics Inc.', 'LG Energy Solution, Ltd.'),
     ('Simpliphi Power', 'SimpliPhi Power, Inc.'),
     ('SolarEdge Technologies Inc', 'SolarEdge Technologies Ltd.'),
-])
+]
 
 
 def upload_cec_battery():
@@ -329,7 +329,7 @@ MODULE_ROW_SPECIFIC_TRANSFORMS = (
 )
 
 
-MODULE_SUNSPEC_MFR_TO_CEC_MFR = OrderedDict([
+MODULE_SUNSPEC_MFR_TO_CEC_MFR = [
     ('Caterpillar, Inc.', 'Caterpillar Inc.'),
     ('Enphase Energy', 'Enphase Energy Inc.'),
     ('Freedom Forever', 'Freedom Forever Procurement LLC'),
@@ -342,7 +342,7 @@ MODULE_SUNSPEC_MFR_TO_CEC_MFR = OrderedDict([
     ('SunPower Corporation', 'SunPower'),
     ('SunPower Corporation', 'Sunpower'),
     ('Tesla', 'Tesla Inc.'),
-])
+]
 
 
 def upload_cec_module():
@@ -414,9 +414,9 @@ def format_ProdCode_Value(df, mfr_mapping):
     # prepend the company code and a hyphen
     # add the exact match company names to mfr_mapping
     for v in set(COMPANY_CODES['Name']).intersection(set(cec_mfrs)):
-        mfr_mapping[v] = v
-    for sunspec_mfr, cec_mfr in mfr_mapping.items():
-        for row, _ in df[cec_mfrs == cec_mfr].iterrows():
+        mfr_mapping.append((v, v))
+    for sunspec_mfr, cec_mfr in mfr_mapping:
+        for row, _ in cec_mfrs[cec_mfrs == cec_mfr].items():
             prodcodes[row] = f"{COMPANY_CODES[COMPANY_CODES['Name'] == sunspec_mfr]['Company Code'].iloc[0]}-{prodcodes[row]}"
     # handle duplicates by appending a hyphen and a number
     duplicates = prodcodes[prodcodes.duplicated(keep=False)]

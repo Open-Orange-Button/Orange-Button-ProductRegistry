@@ -57,6 +57,7 @@ def product_list(request, **kwargs):
         )
         .filter(
             Q(Description_Value__icontains=search_query)
+            | Q(ProdCode_Value__icontains=search_query)
             | Q(ProdMfr_Value__icontains=search_query)
             | Q(ProdName_Value__icontains=search_query)
             | Q(ProdType_Value__icontains=search_query)
