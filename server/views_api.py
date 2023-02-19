@@ -19,7 +19,6 @@ def build_query(prod_types, data):
         subquery_strings.append(subquery)
         params.update(subquery_params)
     query = ' UNION '.join(subquery_strings)
-    print(query)
     return query, params
 
 
@@ -125,10 +124,10 @@ def get_product_id(kwargs):
 
 @decorators.api_view(['GET', 'POST'])
 def product_list(request):
-    if request.method == 'GET':
-        product_ids = models.Product.objects.values_list('id', flat=True)
-    elif request.method == 'POST':
+    if request.method == 'POST':
         product_ids = _product_list_group_by(request.data)
+    else:
+        product_ids = models.Product.objects.values_list('id', flat=True)
     paginator = pagination.ProductsPagination()  # works on lists too
     results_page = paginator.paginate_queryset(product_ids, request)
     results = OrderedDict()
