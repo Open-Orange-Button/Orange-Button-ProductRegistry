@@ -23,11 +23,13 @@ def build_query(prod_types, data):
 
 
 def build_subquery(info_dict):
-    subquery = ''
+    subquery = 'SELECT id, first, group_row FROM ('
     params = {}
     filters = []
     group_bys = []
-    for name, m_info_list in info_dict.items():
+    relation_first = ''
+    join_col_first = ''
+    for i, (name, m_info_list) in enumerate(info_dict.items()):
         m_db = f'server_{name.lower()}'
         for m_info in m_info_list:
             parent_join_column = m_info['parent_join_column']
@@ -36,8 +38,10 @@ def build_subquery(info_dict):
             relation = m_info['relation']
             fields = m_info['fields']
             if parent_relation is None:
-                if subquery == '':
-                    subquery = f'SELECT min({relation}.{join_col}) as {join_col} FROM {m_db} as {relation} '
+                if i == 0:
+                    subquery += f'SELECT {relation}.{join_col}, min({relation}.{join_col}) OVER product_group as first, ROW_NUMBER() OVER product_group as group_row FROM {m_db} as {relation} '
+                    relation_first = relation
+                    join_col_first = join_col
                 else:
                     subquery += f'JOIN {m_db} as {relation} '
             else:
@@ -49,10 +53,13 @@ def build_subquery(info_dict):
                     param_name = f'{name}_{f}'
                     params[param_name] = v
                     filters.append(f'{relation}.{f} REGEXP %({param_name})s')
-    clause_info = (('WHERE', ' AND ', filters), ('GROUP BY', ', ', group_bys))
-    clauses = (f'{kw} {joiner.join(args)}' for kw, joiner, args in clause_info
+    subquery += f'WINDOW product_group as (PARTITION BY {", ".join(group_bys)} ORDER BY {relation_first}.{join_col_first})) as product_groups '
+    clause_info = (('WHERE', ' AND ', filters),)
+    clauses = tuple(f'{kw} {joiner.join(args)}' for kw, joiner, args in clause_info
                if len(args) > 0)
     subquery += ' '.join(clauses)
+    subquery += f'{"AND" if len(clauses) > 0 else "WHERE"} (product_groups.group_row=1 OR product_groups.group_row>=5 AND product_groups.group_row<10)'
+    print(subquery)
     return subquery, params
 
 
