@@ -77,7 +77,7 @@ def product_detail(request, **kwargs):
         pass
     else:
         for p in obit.get_schema_subclasses('Product'):
-            if len(res := list(serializers.serialize_by_ids(p, ids=[get_product_id(kwargs)]).values())) > 0:
+            if len(res := list(serializers.serialize_by_ids(p, [get_product_id(kwargs)]).values())) > 0:
                 product = res[0]
                 form_dict = get_form_dict(p, product)
                 return shortcuts.render(
