@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import itertools
 
 import flatten_json
 
@@ -6,10 +7,15 @@ from server import models
 from server import ob_item_types as obit
 
 
-def get_values_by_ids(name, ids):
+def get_values_by_ids(name, ids, fields_include=None):
+    query = getattr(models, name).objects.filter(id__in=ids)
+    if fields_include is None:
+        query = query.values()
+    else:
+        query = query.values(*fields_include.keys())
     return OrderedDict([
         (o['id'], flatten_json.unflatten(o, '_'))
-        for o in getattr(models, name).objects.filter(id__in=ids).values()
+        for o in query
     ])
 
 
@@ -20,10 +26,13 @@ def get_values_by_fk_ids(name, fk_name, fk_ids):
     ])
 
 
-def serialize_by_ids(name, ids=None, result_values_map=None):
-    if ids is not None:
-        result_values_map = get_values_by_ids(name, ids)
-
+def serialize_by_ids(name, ids=None, result_values_map=None, fields_include=None):
+    """
+    Parameters
+    ----------
+    fields_include: OrderedDict, default None
+        Does not support including arrays.
+    """
     if obit.get_schema_type(name) is obit.OBType.Element:
         return result_values_map
 
@@ -38,6 +47,24 @@ def serialize_by_ids(name, ids=None, result_values_map=None):
         superclass_arrays = obit.arrays_of_ob_object(superclass)
     all_objects = direct_objects + superclass_objects
     all_arrays = direct_arrays + superclass_arrays
+
+    if fields_include is not None:
+        all_objects = tuple(o for o in all_objects if o in fields_include)
+        all_arrays = tuple((plural, s) for plural, s in all_arrays if plural in fields_include)
+        fields_include = fields_include.copy()
+        fields_include['id'] = ''
+        for o in all_objects:
+            fields_include[f'{o}_id'] = ''
+        if superclass is not None:
+            fields_include[f'{superclass.lower()}_ptr_id'] = ''
+        for plural, _ in all_arrays:
+            del fields_include[plural]
+
+    if ids is not None:
+        result_values_map = get_values_by_ids(name, ids, fields_include)
+
+    if fields_include is None:
+        fields_include = OrderedDict()
 
     # Create a map of nested object names to their model ids
     object_values_map = {}
@@ -54,7 +81,7 @@ def serialize_by_ids(name, ids=None, result_values_map=None):
 
     # Fetch all the nested object's models from the database
     for o, obj_ids in object_values_map.items():
-        object_values_map[o] = serialize_by_ids(o, obj_ids)
+        object_values_map[o] = serialize_by_ids(o, obj_ids, fields_include=fields_include.get(o, None))
 
     # Create a map of nested array names to their models from the database
     # Unlike objects, they are fetched by the parent models' ids
@@ -80,6 +107,25 @@ def serialize_by_ids(name, ids=None, result_values_map=None):
             del v[fk_name]
 
     return result_values_map
+
+
+def serialize_product_id_groups(groups):
+    first_products = OrderedDict()
+    first_product_ids = [i for i, _ in groups]
+    for p in obit.get_schema_subclasses('Product'):
+        first_products.update(serialize_by_ids(p, first_product_ids))
+    for product_serialized, group_ids in zip(first_products.values(), [group for _, group in groups], strict=True):
+        product_serialized['SubstituteProducts'] = list(serialize_by_ids('Product', group_ids, fields_include=OrderedDict(
+            [(f, '') for f in itertools.chain(
+                obit.OBElement('ProdCode').model_field_names(),
+                obit.OBElement('ProdID').model_field_names(),
+                obit.OBElement('ProdMfr').model_field_names(),
+                obit.OBElement('ProdName').model_field_names(),
+                obit.OBElement('ProdType').model_field_names(),
+            )],
+            Dimension=OrderedDict(Height_Value='')
+        )).values())
+    return first_products
 
 
 def get_edits(o):

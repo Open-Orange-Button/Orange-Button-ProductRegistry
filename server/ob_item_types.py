@@ -155,6 +155,9 @@ class OBElement:
         return OrderedDict([(self.model_field_name(p), self._primitive_field(p))
                             for p in self.primitives()])
 
+    def model_field_names(self):
+        return tuple(self.model_field_name(p) for p in self.primitives())
+
     def model_field_name(self, p: Primitive):
         if self.use_primitive_names:
             return p.name

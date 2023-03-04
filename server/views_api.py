@@ -23,7 +23,7 @@ def build_query(prod_types, data):
 
 
 def build_subquery(info_dict):
-    subquery = 'SELECT id, first, group_row FROM ('
+    subquery = 'SELECT id, first FROM ('
     params = {}
     filters = []
     group_bys = []
@@ -132,25 +132,30 @@ def get_product_id(kwargs):
 @decorators.api_view(['GET', 'POST'])
 def product_list(request):
     if request.method == 'POST':
-        product_ids = _product_list_group_by(request.data)
+        product_id_groups = _product_list_group_by(request.data)
     else:
         product_ids = models.Product.objects.values_list('id', flat=True)
+        product_id_groups = [(i, []) for i in product_ids]
     paginator = pagination.ProductsPagination()  # works on lists too
-    results_page = paginator.paginate_queryset(product_ids, request)
+    results_page = paginator.paginate_queryset(product_id_groups, request)
     results = OrderedDict()
-    for p in obit.get_schema_subclasses('Product'):
-        results.update(serializers.serialize_by_ids(p, results_page))
+    results.update(serializers.serialize_product_id_groups(results_page))
     return paginator.get_paginated_response(results.values())
 
 
 def _product_list_group_by(post_data):
     prod_types = obit.get_schema_subclasses('Product')
     query, params = build_query(prod_types, post_data)
+    product_groups = OrderedDict()
     with db.connection.cursor() as cursor:
         cursor.execute(query, params=params)
         # min(id) on empty table returns null
-        return [i for i in itertools.chain(*cursor.fetchall()) if i is not None]
-    return models.Product.objects.raw(query)
+        for product_id, first_id in cursor.fetchall():
+            if first_id not in product_groups:
+                product_groups[first_id] = []
+            if product_id != first_id:
+                product_groups[first_id].append(product_id)
+        return list(product_groups.items())
 
 
 @decorators.api_view(['GET'])
