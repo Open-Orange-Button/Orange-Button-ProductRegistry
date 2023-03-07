@@ -115,7 +115,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'server.pagination.ProductsPagination',
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 20,
+    'MAX_LIMIT': 40
 }
 
 AUTH_USER_MODEL = 'server.User'

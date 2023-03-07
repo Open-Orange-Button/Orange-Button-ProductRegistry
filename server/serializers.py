@@ -247,8 +247,8 @@ def serialize_product_id_groups(groups):
                 obit.OBElement('ProdName').model_field_names(),
                 obit.OBElement('ProdType').model_field_names(),
             )],
-            Dimension=OrderedDict(Height_Value=''),
-            ProdCertifications=[OrderedDict(CertificationDate_Value='')]
+            # Dimension=OrderedDict(Height_Value=''),
+            # ProdCertifications=[OrderedDict(CertificationDate_Value='')]
         )).values())
     return first_products
 

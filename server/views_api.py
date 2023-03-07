@@ -1,7 +1,6 @@
 from collections import OrderedDict
-import itertools
 
-from django import db
+from django import db, conf
 from rest_framework import response, decorators
 
 from server import models, ob_item_types as obit, serializers, pagination
@@ -58,7 +57,7 @@ def build_subquery(info_dict):
     clauses = tuple(f'{kw} {joiner.join(args)}' for kw, joiner, args in clause_info
                if len(args) > 0)
     subquery += ' '.join(clauses)
-    subquery += f'{"AND" if len(clauses) > 0 else "WHERE"} (product_groups.group_row=1 OR product_groups.group_row>=5 AND product_groups.group_row<10)'
+    subquery += f'{"AND" if len(clauses) > 0 else "WHERE"} (product_groups.group_row=1 OR product_groups.group_row>=%(offset_SubstituteProducts)s AND product_groups.group_row<%(limit_SubstituteProducts)s)'
     print(subquery)
     return subquery, params
 
@@ -132,7 +131,7 @@ def get_product_id(kwargs):
 @decorators.api_view(['GET', 'POST'])
 def product_list(request):
     if request.method == 'POST':
-        product_id_groups = _product_list_group_by(request.data)
+        product_id_groups = _product_list_group_by(request)
     else:
         product_ids = models.Product.objects.values_list('id', flat=True)
         product_id_groups = [(i, []) for i in product_ids]
@@ -143,9 +142,15 @@ def product_list(request):
     return paginator.get_paginated_response(results.values())
 
 
-def _product_list_group_by(post_data):
+def _product_list_group_by(request):
     prod_types = obit.get_schema_subclasses('Product')
-    query, params = build_query(prod_types, post_data)
+    query, params = build_query(prod_types, request.data)
+    default_page_limit = conf.settings.REST_FRAMEWORK['PAGE_SIZE']
+    max_page_limit = conf.settings.REST_FRAMEWORK['MAX_LIMIT']
+    current_offset = int(request.GET.get('offset_SubstituteProducts', 0))
+    params['offset_SubstituteProducts'] = current_offset + 2  # row_number starts counting at 1, and the first row is the first product. Therefore, the first SubstituteProduct is at row_number 2
+    params['limit_SubstituteProducts'] = current_offset + min(max_page_limit, int(request.GET.get('limit_SubstituteProducts', default_page_limit))) + 2
+    print('offset', params['offset_SubstituteProducts'], 'limit', params['limit_SubstituteProducts'])
     product_groups = OrderedDict()
     with db.connection.cursor() as cursor:
         cursor.execute(query, params=params)
