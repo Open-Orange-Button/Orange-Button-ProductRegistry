@@ -1,0 +1,207 @@
+openapi: 3.0.3
+info:
+  title: OB Product Registry - OpenAPI 3.0
+  description: |-
+    The API endpoints of the Orange Button Product Registry.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit/
+  version: 1.0.0
+servers:
+  - url: https://productregistry.myorangebutton.com/api/v1/
+tags:
+  - name: Product List
+    description: Get a list of Products
+    externalDocs:
+      description: Search for a list of Products
+      url: https://openobeditor.sunspec.org/#/?view=Product,ProdBattery,ProdCombiner,ProdEnergyStorageSystem,ProdInverter,ProdMeter,ProdModule,ProdOptimizer,ProdWire
+paths:
+  /product:
+    get:
+      tags:
+        - Product List
+      summary: Get a list of Products
+      description: Get a paginated list of all Products in the Product Registry.
+      operationId: product-list
+      parameters:
+        - name: limit_Products
+          in: query
+          description: The number of Products to return in a single page.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset_Products
+          in: query
+          description: The number of Products to return in a single page.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Search
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductsListPaginated'
+    post:
+      tags:
+        - Product List
+      summary: Search for Products using regex and alternative key (group by) queries.
+      description: |-
+        Get a paginated list of Products that matches a search query.
+        A search query is defined by a JSON object containing a subset of (possibly nested) fields of a [Product object (or one of its subclasses)](https://openobeditor.sunspec.org/#/?view=Product,ProdBattery,ProdCombiner,ProdEnergyStorageSystem,ProdInverter,ProdMeter,ProdModule,ProdOptimizer,ProdWire) along with string values for each field.
+        The fields of a search query are used to filter Products, and to define a "group by alternative key" query.
+        
+        A group by alternative key query returns a list of Products along with a list of their SubstituteProducts.
+        An alternative key is given by the search query, and it is translated by the search engine into a MySQL `GROUP BY` clause.
+        This clause groups all the Products together, and any Products in the same group are considered SubstituteProducts of each other.
+        One Product from each group is added to the list of Products to be returned as a representative of the group.
+        The remaining Products of each group are listed in the SubstituteProducts array of their respective group representative.
+        
+        > **_NOTE:_** For reproducible search query results, the Product group representative chosen is the first Product in the group that was added to the Product Registry database.
+        
+        To use a field for filtering, add the field to the search query object.
+        If it is a field of a nested object or array, wrap the field in all of its parent objects and arrays.
+        The field's value in the search query object is a non-empty string containing a regular expression.
+        Products that have the field in the search object with a value that matches the regular expression will be returned in the search.
+        Multiple fields may be added to the search query object to filter Products by multiple fields.
+        > **_NOTE:_** To match Products with fields whose value is an empty string, use the regular expression `^$`, not an empty string `""`.
+        
+        > **_WARNING:_** Filtering by fields whose value is a number (float) may have unexpected results. When the search attempts to match numbers to a regular expression, the numbers are coerced to strings.
+        
+        To use a field as an alternative key for grouping Products, add the field to the search query in the same way as described for filtering.
+        Instead of providing a non-empty string to filter by, set the field's value in the search query object to an empty string `""`.
+        Multiple fields may be added to define a compound alternative key (`GROUP BY` with multiple fields).
+        
+        > **_NOTE:_** The order of the fields in a compound alternative key does not matter because the alternative key is used for grouping the Products.
+      operationId: product-list-search
+      parameters:
+        - name: limit_Products
+          in: query
+          description: The number of Products to return in a single page.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset_Products
+          in: query
+          description: The first Product to be returned in the Products array.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit_SubstituteProducts
+          in: query
+          description: The number of SubstituteProducts to return per Product.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset_SubstituteProducts
+          in: query
+          description: The first SubstitueProduct to be returned in the SubstituteProducts array.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      requestBody:
+        description: A product query.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '200':
+          description: Search
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductsListSearchPaginated'
+components:
+  schemas:
+    ProductSubclass:
+      oneOf:
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdBattery'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdCombiner'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdEnergyStorageSystem'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdInverter'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdMeter'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdModule'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdOptimizer'
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/ProdWire'
+    Product:
+      oneOf:
+        - $ref: 'https://raw.githubusercontent.com/Open-Orange-Button/Orange-Button-Taxonomy/main/Master-OB-OpenAPI.json#/components/schemas/Product'
+        - $ref: '#/components/schemas/ProductSubclass'
+    ProductsListPaginated:
+      type: object
+      properties:
+        count_Products:
+          type: integer
+          description: The total number of Products.
+          example: 100000
+        next_Products:
+          type: string
+          nullable: true
+          description: The URL to the next page of Products. It is null when there is no next page.
+          example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=60'
+        prev_Products:
+          type: string
+          nullable: true
+          description: The URL to the previous page of Products. It is null when there is no previous page.
+          example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=20'
+        Products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSubclass'
+    ProductsListSearchPaginated:
+      type: object
+      properties:
+        count_Products:
+          type: integer
+          description: The total number of Products.
+          example: 230
+        next_Products:
+          type: string
+          nullable: true
+          description: The URL to the next page of Products.
+          example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=60&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+        prev_Products:
+          type: string
+          nullable: true
+          description: The URL to the previous page of Products
+          example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=20&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+        max_count_SubstituteProducts:
+          type: integer
+          description: The maximum length of the SubstituteProducts array over all Products returned by the search.
+          example: 48
+        next_SubstituteProducts:
+          type: string
+          nullable: true
+          description: The URL to retrieve the next slice of SubstituteProducts for each Product. It is null when there is no next slice.
+          example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=40&limit_SubstituteProducts=20&offset_SubstituteProducts=60'
+        prev_SubstituteProducts:
+          type: string
+          nullable: true
+          description: The URL to retrieve the next previous of SubstituteProducts for each Product. It is null when there is no previous slice.
+          example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=40&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: Authorization
+      in: header
