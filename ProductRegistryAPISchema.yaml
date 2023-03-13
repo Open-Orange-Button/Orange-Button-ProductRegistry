@@ -47,9 +47,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ProductsListPaginated'
+                $ref: '#/components/schemas/ProductsListPaginated'
     post:
       tags:
         - Product List
@@ -81,6 +79,19 @@ paths:
         Multiple fields may be added to define a compound alternative key (`GROUP BY` with multiple fields).
         
         > **_NOTE:_** The order of the fields in a compound alternative key does not matter because the alternative key is used for grouping the Products.
+        
+        Below are some example search queries:
+        
+         - **FilterProductHanwha**: Creates a search query that filters for Hanwha Products.
+         - **GroupByProdMfr**: Creates an alternative key to group Products by ProdMfr.
+            The Products array returned contains for each manufacturer their first Product added to the Product Registry.
+            Each of these Products has a SubstituteProducts array of the rest of the manufacturer's Products.
+         - **ProdModuleHanwha400W**:
+            Filters for Hanwha ProdModules with `PowerSTC.Value = 400` and `PowerSTC.Unit = W` (Watts).
+            Note that specifying ProdType is optional (though recommended), because ProdModule is the only Product subclass that has the PowerSTC field.
+         - **ComplexSearchQuery**:
+            Filters using fields in nested JSON objects and arrays, and groups Products by an alternative key.
+            It returns a Products array containing ProdBattery objects grouped by ProdMfr with `DCInput.MPPTNumber.Value = 2` and with at least one `MPPT` whose `MPTTInputStrings.Value = 4`.
       operationId: product-list-search
       parameters:
         - name: limit_Products
@@ -123,15 +134,72 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Product'
+            examples:
+              FilterProductHanwha:
+                value:
+                  ProdCode:
+                    Value: "^HANWH"
+              GroupByProdMfr:
+                value:
+                  ProdMfr:
+                    Value: ""
+              ProdModuleHanwha400W:
+                value:
+                  ProdCode:
+                    Value: "^HANWH"
+                  ProdType:
+                    Value: "^Module$"
+                  PowerSTC:
+                    Value: "^400$"
+                    Unit: "^W$"
+              ComplexSearchQuery:
+                value:
+                  ProdMfr:
+                    Value: ""
+                  DCInput:
+                    MPPTNumber:
+                      Value: "^2$"
+                    MPPTs:
+                      - MPPTInputStrings:
+                          Value: "^4$"
       responses:
         '200':
           description: Search
           content:
             application/json:
               schema:
-                type: array
-                items:
+                $ref: '#/components/schemas/ProductsListSearchPaginated'
+              examples:
+                GeneralResponse:
                   $ref: '#/components/schemas/ProductsListSearchPaginated'
+                GroupByProdMfr:
+                  value:
+                    count_Products: 230
+                    next_Products: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=60&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+                    prev_Products: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=20&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+                    max_count_SubstituteProducts: 48
+                    next_SubstituteProducts: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=40&limit_SubstituteProducts=20&offset_SubstituteProducts=60'
+                    prev_SubstituteProducts: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=40&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+                    Products:
+                     - ProdID:
+                        Value: 473c06e4-3a87-4643-b9be-4d7ea3057ed5
+                       ProdMfr:
+                        Value: Ablytek
+                       "...<rest_of_Product_fields>": ""
+                       SubstituteProducts:
+                        - ProdCode:
+                            Value: ABLYT-6MN6A275
+                          ProdID:
+                            Value: 89607c4b-d8ca-421a-a9e2-f3a6d051c8a0
+                          ProdMfr:
+                            Value: Ablytek
+                          ProdName:
+                            Value: Ablytek 6MN6A275
+                          ProdType:
+                            Value: Module
+                        - "...<rest_of_SubstituteProducts>": ""
+                       
+                    
 components:
   schemas:
     ProductSubclass:
@@ -200,6 +268,10 @@ components:
           nullable: true
           description: The URL to retrieve the next previous of SubstituteProducts for each Product. It is null when there is no previous slice.
           example: 'https://productregistry.myorangebutton.com/api/v1/?limit_Products=20&offset_Products=40&limit_SubstituteProducts=20&offset_SubstituteProducts=20'
+        Products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSubclass'
   securitySchemes:
     api_key:
       type: apiKey
