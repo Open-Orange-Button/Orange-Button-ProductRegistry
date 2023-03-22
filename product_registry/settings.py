@@ -138,7 +138,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATICFILES_DIRS = [
-    ('schemas', BASE_DIR / 'server' / 'schemas')
+    ('server/schemas', BASE_DIR / 'server' / 'schemas')
 ]
 
 STATIC_URL = 'static/'

@@ -178,7 +178,7 @@ def product_api_schema(request):
         'server/schema_viewer.html',
         context=dict(
             title='Product Registry - Product API Schema',
-            schema_url=static.static('schemas/api/product.yaml')
+            schema_url=static.static('server/schemas/api/product.yaml')
         )
     )
 
@@ -189,6 +189,6 @@ def obtaxonomy_api_schema(request):
         'server/schema_viewer.html',
         context=dict(
             title='Product Registry - OB Taxonomy',
-            schema_url=static.static('schemas/Master-OB-OpenAPI.json')
+            schema_url=static.static('server/schemas/Master-OB-OpenAPI.json')
         )
     )
