@@ -204,14 +204,14 @@ components:
   schemas:
     ProductSubclass:
       oneOf:
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdBattery'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdCombiner'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdEnergyStorageSystem'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdInverter'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdMeter'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdModule'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdOptimizer'
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdWire'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdBattery'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdCombiner'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdEnergyStorageSystem'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdInverter'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdMeter'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdModule'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdOptimizer'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdWire'
     Product:
       oneOf:
         - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/Product'
