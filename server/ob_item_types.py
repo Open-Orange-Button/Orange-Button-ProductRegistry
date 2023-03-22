@@ -19,7 +19,7 @@ URL_LEN = 2048
 TIME_STR_LEN = 100
 DECIMAL_PLACES = 20
 DECIMAL_MAX_DIGITS = DECIMAL_PLACES * 2
-OB_TAXONOMY_FILEPATH = Path(__file__).parent / 'references' / 'Master-OB-OpenAPI.json'
+OB_TAXONOMY_FILEPATH = Path(__file__).parent / 'schemas' / 'Master-OB-OpenAPI.json'
 
 
 def load_ob_taxonomy():

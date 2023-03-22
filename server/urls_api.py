@@ -22,4 +22,6 @@ urlpatterns = [
     urls.path('product/', views_api.product_list, name='product-list'),
     urls.path('product/<uuid:uuid>/', views_api.product_detail, name='product-detail-prodid'),
     urls.path('product/<slug:ProdCode_Value>/', views_api.product_detail, name='product-detail-prodcode'),
+    urls.path('schemas/product/', views_api.product_api_schema, name='product-api-schema'),
+    urls.path('schemas/obtaxonomy/', views_api.obtaxonomy_api_schema, name='obtaxonomy-api-schema'),
 ]

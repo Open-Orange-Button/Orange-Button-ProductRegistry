@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
-from django import db, conf
+from django import db, conf, shortcuts
+from django.templatetags import static
 from rest_framework import response, decorators
 
 from server import models, ob_item_types as obit, serializers, pagination
@@ -57,7 +58,7 @@ def build_subquery(info_dict):
     clauses = tuple(f'{kw} {joiner.join(args)}' for kw, joiner, args in clause_info
                if len(args) > 0)
     subquery += ' '.join(clauses)
-    subquery += f'{"AND" if len(clauses) > 0 else "WHERE"} (product_groups.group_row=1 OR product_groups.group_row>=%(offset_SubstituteProducts)s AND product_groups.group_row<%(limit_SubstituteProducts)s)'
+    subquery += f'{" AND" if len(clauses) > 0 else "WHERE"} (product_groups.group_row=1 OR product_groups.group_row>=%(offset_SubstituteProducts)s AND product_groups.group_row<%(limit_SubstituteProducts)s)'
     print(subquery)
     return subquery, params
 
@@ -169,3 +170,25 @@ def product_detail(request, **kwargs):
         if len(res := list(serializers.serialize_by_ids(p, [get_product_id(kwargs)]).values())) > 0:
             return response.Response(res[0])
     return response.Response()
+
+
+def product_api_schema(request):
+    return shortcuts.render(
+        request,
+        'server/schema_viewer.html',
+        context=dict(
+            title='Product Registry - Product API Schema',
+            schema_url=static.static('schemas/api/product.yaml')
+        )
+    )
+
+
+def obtaxonomy_api_schema(request):
+    return shortcuts.render(
+        request,
+        'server/schema_viewer.html',
+        context=dict(
+            title='Product Registry - OB Taxonomy',
+            schema_url=static.static('schemas/Master-OB-OpenAPI.json')
+        )
+    )
