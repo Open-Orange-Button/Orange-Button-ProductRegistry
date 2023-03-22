@@ -214,7 +214,7 @@ components:
         - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/ProdWire'
     Product:
       oneOf:
-        - $ref: '/static/schemas/Master-OB-OpenAPI.json#/components/schemas/Product'
+        - $ref: '/static/server/schemas/Master-OB-OpenAPI.json#/components/schemas/Product'
         - $ref: '#/components/schemas/ProductSubclass'
     ProductsListPaginated:
       type: object
