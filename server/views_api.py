@@ -7,28 +7,45 @@ from rest_framework import response, decorators
 from server import models, ob_item_types as obit, serializers, pagination
 
 
-def build_query(prod_types, data):
+def build_query(prod_types, request):
     subqueries = []
     for pt in prod_types:
         info_dict = OrderedDict()
-        build_subquery_info(data, info_dict, pt, None)
-        subqueries.append(build_subquery(info_dict))
+        build_subquery_info(request.data, info_dict, pt, None)
+        subqueries.append(_build_subquery(info_dict))
     subquery_strings = []
     params = dict()
-    for subquery, subquery_params in subqueries:
+    has_group_by = False
+    for subquery, subquery_params, subquery_has_group_by in subqueries:
         subquery_strings.append(subquery)
         params.update(subquery_params)
+        has_group_by = has_group_by or subquery_has_group_by
     query = ' UNION '.join(subquery_strings)
-    return query, params
+
+    if 'WINDOW' in query:  # has group by
+        default_page_limit = conf.settings.REST_FRAMEWORK['PAGE_SIZE']
+        max_page_limit = conf.settings.REST_FRAMEWORK['MAX_LIMIT']
+        current_offset = int(request.GET.get('offset_SubstituteProducts', 0))
+        params['offset_SubstituteProducts'] = current_offset + 2  # row_number starts counting at 1, and the first row is the first product. Therefore, the first SubstituteProduct is at row_number 2
+        params['limit_SubstituteProducts'] = current_offset + min(max_page_limit, int(request.GET.get('limit_SubstituteProducts', default_page_limit))) + 2
+        print('offset', params['offset_SubstituteProducts'], 'limit', params['limit_SubstituteProducts'])
+
+    return query, params, has_group_by
 
 
-def build_subquery(info_dict):
-    subquery = 'SELECT id, first FROM ('
-    params = {}
-    filters = []
-    group_bys = []
-    relation_first = ''
-    join_col_first = ''
+def _SELECT(relation, join_col, has_group_by: bool, window_name='query_group'):
+    columns = [f'{relation}.{join_col}']
+    if has_group_by:
+        columns += [
+            f'min({relation}.{join_col}) OVER {window_name} as first',
+            f'ROW_NUMBER() OVER {window_name} as group_row'
+        ]
+    return f"SELECT {', '.join(columns)} "
+
+
+def _FROM_TABLES(info_dict):
+    FROM = 'FROM '
+    relation_first, join_col_first = None, None
     for i, (name, m_info_list) in enumerate(info_dict.items()):
         m_db = f'server_{name.lower()}'
         for m_info in m_info_list:
@@ -36,31 +53,66 @@ def build_subquery(info_dict):
             join_col = m_info['join_col']
             parent_relation = m_info['parent_relation']
             relation = m_info['relation']
-            fields = m_info['fields']
-            if parent_relation is None:
-                if i == 0:
-                    subquery += f'SELECT {relation}.{join_col}, min({relation}.{join_col}) OVER product_group as first, ROW_NUMBER() OVER product_group as group_row FROM {m_db} as {relation} '
-                    relation_first = relation
-                    join_col_first = join_col
-                else:
-                    subquery += f'JOIN {m_db} as {relation} '
+            if i == 0:
+                table = f'{m_db} as {relation}'
+                relation_first, join_col_first = relation, join_col
             else:
-                subquery += f'JOIN {m_db} as {relation} ON {parent_relation}.{parent_join_column}={relation}.{join_col} '
+                table = f'JOIN {m_db} as {relation}'
+            if parent_relation is not None:
+                table = f'{table} ON {parent_relation}.{parent_join_column}={relation}.{join_col}'
+            FROM += f'{table} '
+    return FROM, relation_first, join_col_first
+
+
+def _get_WHERE_GROUP_BY_clauses(info_dict):
+    params = {}
+    wheres, group_bys = [], []
+    for i, (name, m_info_list) in enumerate(info_dict.items()):
+        for m_info in m_info_list:
+            relation = m_info['relation']
+            fields = m_info['fields']
             for f, v in fields:
                 if v == '':
                     group_bys.append(f'{relation}.{f}')
                 else:
                     param_name = f'{name}_{f}'
                     params[param_name] = v
-                    filters.append(f'{relation}.{f} REGEXP %({param_name})s')
-    subquery += f'WINDOW product_group as (PARTITION BY {", ".join(group_bys)} ORDER BY {relation_first}.{join_col_first})) as product_groups '
-    clause_info = (('WHERE', ' AND ', filters),)
-    clauses = tuple(f'{kw} {joiner.join(args)}' for kw, joiner, args in clause_info
-               if len(args) > 0)
-    subquery += ' '.join(clauses)
-    subquery += f'{" AND" if len(clauses) > 0 else "WHERE"} (product_groups.group_row=1 OR product_groups.group_row>=%(offset_SubstituteProducts)s AND product_groups.group_row<%(limit_SubstituteProducts)s)'
+                    wheres.append(f'{relation}.{f} REGEXP %({param_name})s')
+    return wheres, group_bys, params
+
+
+def _WHERE(where_clauses):
+    return f"WHERE {' AND '.join(where_clauses)} "
+
+
+def _WINDOW_PARTITION_BY(relation, join_col, group_by_clauses, window_name='query_group'):
+    return f"WINDOW {window_name} as (PARTITION BY {', '.join(group_by_clauses)} ORDER BY {relation}.{join_col})"
+
+
+def _PaginationSubstitueProducts(query_relation, row_num_col='group_row',
+                                 offset_param='offset_SubstituteProducts',
+                                 limit_param='limit_SubstituteProducts'):
+    return f'WHERE ({query_relation}.{row_num_col}=1 OR {query_relation}.{row_num_col}>=%({offset_param})s AND {query_relation}.{row_num_col}<%({limit_param})s) '
+
+
+def _build_subquery(info_dict):
+    wheres, group_bys, params = _get_WHERE_GROUP_BY_clauses(info_dict)
+    has_wheres, has_group_by = len(wheres) > 0, len(group_bys) > 0
+    FROM_TABLES, relation_first, join_col_first = _FROM_TABLES(info_dict)
+    SELECT = _SELECT(relation_first, join_col_first, has_group_by)
+    WHERE = ''
+    if has_wheres:
+        WHERE = _WHERE(wheres)
+    subquery = f'{SELECT}{FROM_TABLES}{WHERE}'
+    WINDOW_PARTITION_BY = ''
+    PaginationSubstitueProducts = ''
+    if has_group_by:
+        WINDOW_PARTITION_BY = _WINDOW_PARTITION_BY(relation_first, join_col_first, group_bys)
+        query_groups_relation = 'query_group'
+        PaginationSubstitueProducts = _PaginationSubstitueProducts(query_groups_relation)
+        subquery = f'SELECT id, first FROM ({subquery}{WINDOW_PARTITION_BY}) as {query_groups_relation} {PaginationSubstitueProducts}'
     print(subquery)
-    return subquery, params
+    return subquery, params, has_group_by
 
 
 def build_subquery_info(query_data, info_dict, name, parent_name):
@@ -132,7 +184,7 @@ def get_product_id(kwargs):
 @decorators.api_view(['GET', 'POST'])
 def product_list(request):
     if request.method == 'POST':
-        product_id_groups = _product_list_group_by(request)
+        product_id_groups = _product_list_query(request)
     else:
         product_ids = models.Product.objects.values_list('id', flat=True)
         product_id_groups = [(i, []) for i in product_ids]
@@ -143,24 +195,23 @@ def product_list(request):
     return paginator.get_paginated_response(results.values())
 
 
-def _product_list_group_by(request):
+def _product_list_query(request):
     prod_types = obit.get_schema_subclasses('Product')
-    query, params = build_query(prod_types, request.data)
-    default_page_limit = conf.settings.REST_FRAMEWORK['PAGE_SIZE']
-    max_page_limit = conf.settings.REST_FRAMEWORK['MAX_LIMIT']
-    current_offset = int(request.GET.get('offset_SubstituteProducts', 0))
-    params['offset_SubstituteProducts'] = current_offset + 2  # row_number starts counting at 1, and the first row is the first product. Therefore, the first SubstituteProduct is at row_number 2
-    params['limit_SubstituteProducts'] = current_offset + min(max_page_limit, int(request.GET.get('limit_SubstituteProducts', default_page_limit))) + 2
-    print('offset', params['offset_SubstituteProducts'], 'limit', params['limit_SubstituteProducts'])
+    query, params, has_group_by = build_query(prod_types, request)
     product_groups = OrderedDict()
     with db.connection.cursor() as cursor:
         cursor.execute(query, params=params)
         # min(id) on empty table returns null
-        for product_id, first_id in cursor.fetchall():
-            if first_id not in product_groups:
-                product_groups[first_id] = []
-            if product_id != first_id:
-                product_groups[first_id].append(product_id)
+        for row in cursor.fetchall():
+            if has_group_by:
+                product_id, first_id = row
+                if first_id not in product_groups:
+                    product_groups[first_id] = []
+                if product_id != first_id:
+                    product_groups[first_id].append(product_id)
+            else:
+                product_id, = row  # unpack length one tuple
+                product_groups[product_id] = []
         return list(product_groups.items())
 
 
