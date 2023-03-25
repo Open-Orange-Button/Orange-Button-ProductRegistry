@@ -139,7 +139,7 @@ def build_subquery_info(query_data, info_dict, name, parent_name):
     # record the fields in the query_data
     unknowm_primitives = set()
     for f in elements:
-        for k in set(query_data[f].keys() - obit.OBElement(f).primitives()):
+        for k in set(query_data[f].keys() - set(p.name for p in obit.OBElement(f).primitives())):
             unknowm_primitives.add(f'{f}_{k}')
         for p in obit.Primitive:
             if (v := query_data[f].get(p.name, None)) is not None:
