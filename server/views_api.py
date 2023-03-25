@@ -137,10 +137,17 @@ def build_subquery_info(query_data, info_dict, name, parent_name):
     )
 
     # record the fields in the query_data
+    unknowm_primitives = set()
     for f in elements:
+        for k in set(query_data[f].keys() - obit.OBElement(f).primitives()):
+            unknowm_primitives.add(f'{f}_{k}')
         for p in obit.Primitive:
             if (v := query_data[f].get(p.name, None)) is not None:
                 m_info['fields'].append(dict(col=f'{f}_{p.name}', val=v))
+
+    if len(unknowm_primitives) > 0:
+        info_dict['!missing_fields'] = ', '.join(sorted(unknowm_primitives))
+        return
 
     info_dict[name].append(m_info)  # leave out if fields length is zero?
 
@@ -167,7 +174,7 @@ def build_query(prod_types, request):
     debug_dict = dict(
         query='',
         query_params={},
-        has_group_by=None,
+        subqueries=[],
         subquery_intermediate_representations=info_dicts
     )
     if len(subqueries) == 0:
