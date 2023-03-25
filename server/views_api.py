@@ -7,30 +7,8 @@ from rest_framework import response, decorators
 from server import models, ob_item_types as obit, serializers, pagination
 
 
-def build_query(prod_types, request):
-    subqueries = []
-    for pt in prod_types:
-        info_dict = OrderedDict()
-        build_subquery_info(request.data, info_dict, pt, None)
-        subqueries.append(_build_subquery(info_dict))
-    subquery_strings = []
-    params = dict()
-    has_group_by = False
-    for subquery, subquery_params, subquery_has_group_by in subqueries:
-        subquery_strings.append(subquery)
-        params.update(subquery_params)
-        has_group_by = has_group_by or subquery_has_group_by
-    query = ' UNION '.join(subquery_strings)
-
-    if 'WINDOW' in query:  # has group by
-        default_page_limit = conf.settings.REST_FRAMEWORK['PAGE_SIZE']
-        max_page_limit = conf.settings.REST_FRAMEWORK['MAX_LIMIT']
-        current_offset = int(request.GET.get('offset_SubstituteProducts', 0))
-        params['offset_SubstituteProducts'] = current_offset + 2  # row_number starts counting at 1, and the first row is the first product. Therefore, the first SubstituteProduct is at row_number 2
-        params['limit_SubstituteProducts'] = current_offset + min(max_page_limit, int(request.GET.get('limit_SubstituteProducts', default_page_limit))) + 2
-        print('offset', params['offset_SubstituteProducts'], 'limit', params['limit_SubstituteProducts'])
-
-    return query, params, has_group_by
+PARAM_OFFSET_SUBSTITUTEPRODUCTS = 'offset_SubstituteProducts'
+PARAM_LIMIT_SUBSTITUTEPRODUCTS = 'limit_SubstituteProducts'
 
 
 def _SELECT(relation, join_col, has_group_by: bool, window_name='query_group'):
@@ -89,10 +67,8 @@ def _WINDOW_PARTITION_BY(relation, join_col, group_by_clauses, window_name='quer
     return f"WINDOW {window_name} as (PARTITION BY {', '.join(group_by_clauses)} ORDER BY {relation}.{join_col})"
 
 
-def _PaginationSubstitueProducts(query_relation, row_num_col='group_row',
-                                 offset_param='offset_SubstituteProducts',
-                                 limit_param='limit_SubstituteProducts'):
-    return f'WHERE ({query_relation}.{row_num_col}=1 OR {query_relation}.{row_num_col}>=%({offset_param})s AND {query_relation}.{row_num_col}<%({limit_param})s) '
+def _PaginationSubstitueProducts(query_relation, row_num_col='group_row'):
+    return f'WHERE ({query_relation}.{row_num_col}=1 OR {query_relation}.{row_num_col}>=%({PARAM_OFFSET_SUBSTITUTEPRODUCTS})s AND {query_relation}.{row_num_col}<%({PARAM_LIMIT_SUBSTITUTEPRODUCTS})s) '
 
 
 def _build_subquery(info_dict):
@@ -168,6 +144,31 @@ def build_subquery_info(query_data, info_dict, name, parent_name):
         a_singular = obit.array_to_singular(a)
         for am in query_data[a]:
             build_subquery_info(am, info_dict, a_singular, name)
+
+
+def build_query(prod_types, request):
+    subqueries = []
+    for pt in prod_types:
+        info_dict = OrderedDict()
+        build_subquery_info(request.data, info_dict, pt, None)
+        subqueries.append(_build_subquery(info_dict))
+    subquery_strings = []
+    params = dict()
+    has_group_by = False
+    for subquery, subquery_params, subquery_has_group_by in subqueries:
+        subquery_strings.append(subquery)
+        params.update(subquery_params)
+        has_group_by = has_group_by or subquery_has_group_by
+    query = ' UNION '.join(subquery_strings)
+
+    if has_group_by:
+        default_page_limit = conf.settings.REST_FRAMEWORK['PAGE_SIZE']
+        max_page_limit = conf.settings.REST_FRAMEWORK['MAX_LIMIT']
+        current_offset = int(request.GET.get(PARAM_OFFSET_SUBSTITUTEPRODUCTS, 0))
+        params[PARAM_OFFSET_SUBSTITUTEPRODUCTS] = current_offset + 2  # row_number starts counting at 1, and the first row is the first product. Therefore, the first SubstituteProduct is at row_number 2
+        params[PARAM_LIMIT_SUBSTITUTEPRODUCTS] = current_offset + min(max_page_limit, int(request.GET.get(PARAM_LIMIT_SUBSTITUTEPRODUCTS, default_page_limit))) + 2
+
+    return query, params, has_group_by
 
 
 def get_product_id(kwargs):
