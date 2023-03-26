@@ -11,7 +11,7 @@ class ProductsPagination(pagination.LimitOffsetPagination):
     offset_SubstituteProducts_query_param = 'offset_SubstituteProducts'
     max_limit = conf.settings.REST_FRAMEWORK['MAX_LIMIT']
 
-    def paginate_queryset(self, queryset, request, view=None, max_count_SubstituteProducts=None):
+    def paginate_queryset(self, queryset, request, view=None, max_count_SubstituteProducts=0):
         page = super().paginate_queryset(queryset, request, view=view)
 
         self.max_count_SubstituteProducts = max_count_SubstituteProducts
@@ -69,23 +69,15 @@ class ProductsPagination(pagination.LimitOffsetPagination):
         return utils.urls.replace_query_param(url, self.offset_SubstituteProducts_query_param, offset_SubstituteProducts)
 
     def get_paginated_response(self, data, debug_dict=None):
-        if self.max_count_SubstituteProducts is None:
-            res = OrderedDict(
-                count_Products=self.count,
-                next_Products=self.get_next_Products_link(),
-                prev_Products=self.get_prev_Products_link(),
-                Products=data
-            )
-        else:
-            res = OrderedDict(
-                count_Products=self.count,
-                next_Products=self.get_next_Products_link(),
-                prev_Products=self.get_prev_Products_link(),
-                max_count_SubstituteProducts=self.max_count_SubstituteProducts,
-                next_SubstituteProducts=self.get_next_SubstituteProducts_link(),
-                prev_SubstituteProducts=self.get_prev_SubstituteProducts_link(),
-                Products=data
-            )
+        res = OrderedDict(
+            count_Products=self.count,
+            next_Products=self.get_next_Products_link(),
+            prev_Products=self.get_prev_Products_link(),
+            max_count_SubstituteProducts=self.max_count_SubstituteProducts,
+            next_SubstituteProducts=self.get_next_SubstituteProducts_link(),
+            prev_SubstituteProducts=self.get_prev_SubstituteProducts_link(),
+            Products=data
+        )
         if self.request.query_params.get('debug', None) == 'true':
             res['debug'] = debug_dict
             res.move_to_end('debug', last=False)
