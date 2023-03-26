@@ -11,6 +11,26 @@ from django_mysql import models as mysql_models
 import server.ob_item_types as obit
 
 
+@models.Field.register_lookup
+class IContains(models.lookups.IContains):
+    """
+    Custom implementation of the ``icontains`` QuerySet lookup filter.
+    """
+
+    def as_sql(self, compiler, connection):
+        """
+        Return MySQL that matches lowercased values with a lowercased
+        pattern string.
+
+        The superclass claims to use ``ILIKE`` but keyword this does not exist
+        in MySQL.
+        """
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = (*lhs_params, *map(str.lower, rhs_params))
+        return f'LOWER({lhs}) LIKE {rhs}', params
+
+
 def get_all_ob_submodels(name):
     results = OrderedDict([(name, '')])
     for o in obit.objects_of_ob_object(name):
