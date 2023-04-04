@@ -1,7 +1,6 @@
 from collections import OrderedDict
 import enum
 
-from django import urls
 from django.db import models
 from django.core import validators
 from django.contrib import auth
@@ -52,10 +51,6 @@ def get_ob_all_models():
 
 FOREIGN_KEY_KWARGS = dict(on_delete=models.DO_NOTHING)
 OB_MODELS = tuple(get_ob_all_models().keys())
-PROD_MODLES = (
-    'ProdBattery', 'ProdCell', 'ProdCombiner', 'ProdEnergyStorageSystem',
-    'ProdGlazing', 'ProdMeter', 'ProdModule', 'ProdOptimizer', 'ProdWire'
-)
 EDIT_MODELS = (
     'EditChar', 'EditDateTime', 'EditDecimal', 'EditPositiveInteger',
     'EditInteger', 'EditURL', 'EditUUID'
@@ -205,9 +200,6 @@ class ProdModule(Product):
             blank=True, null=True
         )
     )
-
-    def get_absolute_url(self):
-        return urls.reverse('prodmodule-detail-prodid', kwargs=dict(uuid=self.ProdID_Value))
 
 
 class ProdInverter(Product):
