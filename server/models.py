@@ -7,6 +7,8 @@ from django.contrib import auth
 
 from django_mysql import models as mysql_models
 
+import rest_framework
+
 import server.ob_item_types as obit
 
 
@@ -389,3 +391,8 @@ class EditURL(Edit):
 class EditUUID(Edit):
     FieldValue = models.UUIDField(blank=True)
     FieldValueOld = models.UUIDField(blank=True)
+
+
+class APIToken(rest_framework.authtoken.models.Token):
+    expires = models.DateTimeField(default=None, blank=True, null=True)
+    is_active = models.BooleanField(default=True, blank=True)

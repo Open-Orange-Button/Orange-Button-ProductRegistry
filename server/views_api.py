@@ -4,7 +4,10 @@ from django import db, conf, shortcuts
 from django.templatetags import static
 from rest_framework import response, decorators
 
-from server import models, ob_item_types as obit, serializers, pagination
+from server import (
+    models, ob_item_types as obit, serializers, pagination, permissions,
+    authentication
+)
 
 
 PARAM_OFFSET_SUBSTITUTEPRODUCTS = 'offset_SubstituteProducts'
@@ -217,6 +220,8 @@ def get_product_id(kwargs):
 
 
 @decorators.api_view(['GET', 'POST'])
+@decorators.authentication_classes([authentication.APIToken])
+@decorators.permission_classes([permissions.IsSunSpecMember, permissions.IsAPITokenActive, permissions.IsAPITokenNotExpired])
 def product_list(request):
     if request.method == 'POST':
         product_id_groups, max_group_size, debug_dict = _product_list_query(request)
@@ -257,6 +262,8 @@ def _product_list_query(request):
 
 
 @decorators.api_view(['GET'])
+@decorators.authentication_classes([authentication.APIToken])
+@decorators.permission_classes([permissions.IsSunSpecMember, permissions.IsAPITokenActive, permissions.IsAPITokenNotExpired])
 def product_detail(request, **kwargs):
     for p in obit.get_schema_subclasses('Product'):
         if len(res := list(serializers.serialize_by_ids(p, [get_product_id(kwargs)]).values())) > 0:
