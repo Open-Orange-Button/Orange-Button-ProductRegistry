@@ -1,3 +1,101 @@
+"""
+Script and tools for uploading Product data into the Product Registry.
+It supports uploading the CEC Product data and expects the data to be Excel.
+
+The script needs a predefined mapping between the columns in the data file and
+the Orange Button taxonomy elements. Using the mapping, it transforms each row
+of the data into a JSON instance of an Orange Button Product. The script
+iterates over the JSON instance, and inserts rows into the database's tables
+as needed.
+
+For each new data file, there are six types of mappings or lists that can be
+used to control how the data is uploaded:
+
+    1. **COLUMN_DTYPES**: Tells pandas (the data file reader) what type to
+       interpret each columns' data as. Usually pandas chooses the correct
+       type; however decimal values should be read as strings, not floats.
+       Later, when the data is uploaded to the database, these strings will be
+       converted to Python Decimal types. These store decimal values more
+       precisely than floats.
+    1. **COLUMN_VALUE_TO_OB_VALUE**: Defines how to convert data values to
+       Orange Button values. This can be used for Orange Button enumerations.
+       It is a list of tuples of:
+
+       .. code-block:: python
+
+          ('<data_column_name>', ('<data_value>', <'OB_value'>))
+
+       If a column does not have a corresponding Orange Button element, it can
+       be skipped by mapping it to an empty tuple:
+
+       .. code-block:: python
+
+          ('<data_column_name>', tuple())
+
+    1. **TO_OB_FIELD**: Defines the mapping from the columns of the data
+       file to (a list of) the Orange Button elements and their primitives
+       (Value, Unit, etc.). It is a dictionary of:
+
+       .. code-block:: python
+
+          {
+              '<data_column_name>': (
+                  # use the value from the data column
+                  '<dot_path_to_element_in_Product>_<primitive>',
+                  # use a defualt_value instead (useful for setting Unit)
+                  ('<dot_path_to_element_in_Product>_<primitive>', <default_value>)
+              )
+          }
+
+       The dot-paths can also handle nested arrays of Orange Button objects.
+       Use ``<dot_path_to_array>.2`` to refer to the third object of the array.
+
+    1. **EXTRA_DEFAULTS**: Extends **TO_OB_FIELD** to include known data for a
+       Product that is not explicitly included in the data file. For example,
+       for a file of ProdBattery data, we know the ProdType is ``Battery``. It
+       is a dictionary of:
+
+       .. code-block:: python
+
+          {
+              '<data_column_name>': (
+                  ('<dot_path_to_element_in_Product>_<primitive>', <default_value>)
+              )
+          }
+
+       Also, this is used to ensure rows for one-to-one related Orange Button
+       objects are created. One-to-one related objects appear as nested JSON
+       objects, and the database is designed to make one-to-one relationships
+       required. For example, every Contact row must have an Address row even
+       if there is no data for the Address when the Contact is created. To
+       create a row that corresponds to a nested JSON object, add a dot-path
+       to one of the Orange Button elements of that row with the appropriate
+       default value. For example, to create a Dimension row to ProdBattery, we
+       can set:
+
+       .. code-block:: python
+
+          EXTRA_DEFAULTS['ProdBattery.Dimension.Height_Value'] = None
+
+    1. **ROW_SPECIFIC_TRANSFORMS**: Allows for doing for complicated data
+       transforms on a row. For example, sometimes to store a list of values
+       in Excel, a delimited list of values will be put in a cell. For Orange
+       Button, these need to be split into a nested array, and splitting can
+       be done through a row specific transform. This is a list of functions
+       that will be run on each row of the data.
+    1. **SUNSPEC_MFR_TO_CEC_MFR**: Used for creating Products' ProdCode.
+       It maps SunSpec manufacturer names to CEC manufacturer names. Note
+       the CEC sometimes uses multiple names for the same manufacturer. This
+       is a list of tuples of:
+
+       .. code-block:: python
+
+          ('<SunSpec_mfr1_name>', '<CEC_mfr1_name1>'),
+          ('<SunSpec_mfr1_name>', '<CEC_mfr1_name2>'),
+
+After these are created, they can be passed to the :func:`upload` method to
+begin uploading the data.
+"""
 from collections import OrderedDict
 import datetime
 from pathlib import Path
@@ -6,26 +104,31 @@ import re
 from django.apps import apps
 from django.db import models, transaction
 
-import flatten_json
-import pandas as pd
+import flatten_json  # to turn the dot-path notation into nested JSON objects
+import pandas as pd  # easy IO for Excel and CSV files
 import numpy as np
-from tqdm import tqdm
+from tqdm import tqdm  # for upload progress and speed measurement
 
 
+# where to put the data file
 DATA_DIR = Path(__file__).parent / 'data'
 
+# SunSpec manufacturer names Excel file
 COMPANY_CODES_XLSX = DATA_DIR / 'COMPANY CODES.xlsx'
-
 COMPANY_CODES = pd.read_excel(COMPANY_CODES_XLSX)
+
+"""
+CEC Battery to ProdBattery
+"""
 
 BATTERY_XLSX = DATA_DIR / 'Battery_List_Data_ADA.xlsx'
 
-BATTERY_COLOMN_DTYPES = {
+BATTERY_COLUMN_DTYPES = {
     'Nameplate Energy Capacity': str,
     'Maximum Continuous Discharge Rate2': str
 }
 
-BATTERY_COLOMN_VALUE_TO_OB_VALUE = (
+BATTERY_COLUMN_VALUE_TO_OB_VALUE = (
     ('Edition of UL 1973', ('Ed. 2 : 2018', 'UL1973_2_2018')),
     ('Edition of UL 1973', ('Ed. 2: 2018', 'UL1973_2_2018')),
     ('Technology', ('Lithium Iron Phosphate', 'LiFePO4')),
@@ -94,7 +197,7 @@ BATTERY_SUNSPEC_MFR_TO_CEC_MFR = [
 
 def upload_cec_battery():
     dataframe = (
-        pd.read_excel(BATTERY_XLSX, header=None, names=BATTERY_TO_OB_FIELD.keys(), dtype=BATTERY_COLOMN_DTYPES)[12:]
+        pd.read_excel(BATTERY_XLSX, header=None, names=BATTERY_TO_OB_FIELD.keys(), dtype=BATTERY_COLUMN_DTYPES)[12:]
         .replace({np.nan: None})
         .drop_duplicates()
     )
@@ -103,7 +206,7 @@ def upload_cec_battery():
         dataframe=dataframe,
         mfr_mapping=BATTERY_SUNSPEC_MFR_TO_CEC_MFR,
         field_mapping=BATTERY_TO_OB_FIELD,
-        value_mapping=BATTERY_COLOMN_VALUE_TO_OB_VALUE,
+        value_mapping=BATTERY_COLUMN_VALUE_TO_OB_VALUE,
         extra_default_fields=BATTERY_EXTRA_DEFAULTS,
         row_specific_transforms=tuple()
     )
@@ -365,9 +468,14 @@ def upload_cec_module():
 def upload(model_name, dataframe, mfr_mapping, field_mapping, value_mapping,
            extra_default_fields, row_specific_transforms):
     data_cec = dataframe
+
     format_ProdCode_Value(data_cec, mfr_mapping)
+
+    # COLUMN_VALUE_TO_OB_VALUE
     for col, (old_val, new_val) in value_mapping:
         convert_val(data_cec, col, old_val, new_val)
+
+    # TO_OB_FIELD
     data_cec = [row.to_dict() for _, row in data_cec.iterrows()]
     data_ob = []
     for row in tqdm(data_cec, ascii=True, desc='field mapping'):
@@ -383,13 +491,21 @@ def upload(model_name, dataframe, mfr_mapping, field_mapping, value_mapping,
                     case _:
                         raise ValueError(f'Expected mapping for {src_name} to be tuple or str, but got {type(m)}')
         data_ob.append(row_ob)
+
+    # EXTRA_DEFAULTS
     for row in tqdm(data_ob, ascii=True, desc='req 1to1 fields'):
         for ob_path, value in extra_default_fields.items():
             row[ob_path] = value
+
+    # ROW_SPECIFIC_TRANSFORMS
     for row in tqdm(data_ob, ascii=True, desc='row specific transforms'):
         for t in row_specific_transforms:
             t(row)
+
+    # convert dot-paths into Orange Button JSON
     data_ob = [flatten_json.unflatten_list(row, '.') for row in data_ob]
+
+    # insert rows into database
     independent_and_1to1_models = OrderedDict()
     foreign_key_models = OrderedDict()
     for i, d in enumerate(tqdm(data_ob, ascii=True, desc='prep inserts')):
