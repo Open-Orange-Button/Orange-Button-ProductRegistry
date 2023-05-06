@@ -6,3 +6,4 @@ pandas==1.5.3
 mysqlclient==2.1.1
 flatten-json==0.1.13
 django-mysql==4.8.0
+pytest-django==4.5.2

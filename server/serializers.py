@@ -12,7 +12,8 @@ def wrap_with_id_and_unflatten(dict_list):
     Parameters
     ----------
     dict_list: list(dict)
-        A list of dictionaries that contain the key ``id``.
+        A list of dictionaries that contain the key ``id``. It is assumed the
+        ``id`` value is unique across the dicts in the list.
 
     Returns
     -------
@@ -63,7 +64,8 @@ def get_values_by_fk_ids(name, fk_name, fk_ids, fields_include=None):
     """
     Gets an OrderedDict of row ids to row data dicts of a Django model given a
     list of ids of table that the Django model has a one-to-many relationship
-    with. ``fk_name:1->M:name``.
+    with. Note ``fk_name:1->M:name``; that is, the ``name`` model is the "many"
+    in the relationship.
 
     Parameters
     ----------
@@ -84,7 +86,8 @@ def get_values_by_fk_ids(name, fk_name, fk_ids, fields_include=None):
     -------
         OrderedDict mapping row id to row data dict of the ``name`` table.
     """
-    query = getattr(models, name).objects.filter(**{f'{fk_name}_id__in': fk_ids})
+    query = getattr(models, name).objects.filter(
+        **{f'{fk_name}_id__in': fk_ids})
     if fields_include is None:
         query = query.values()
     else:
@@ -138,14 +141,17 @@ def serialize(name, get_result_values_map, fields_include=None):
     fields_include_all_arrays = OrderedDict()
     if fields_include is not None:
         all_objects = tuple(o for o in all_objects if o in fields_include)
-        all_arrays = tuple((plural, s) for plural, s in all_arrays if plural in fields_include)
+        all_arrays = tuple((plural, s)
+                           for plural, s in all_arrays if plural in fields_include)
         fields_include = fields_include.copy()
         fields_include['id'] = ''  # the internal row id
-        for o in all_objects:
+        for o in all_objects:  # use all objects because any objects of the superclass are accessible through the subclass
             fields_include[f'{o}_id'] = ''  # one-to-one relations
         if superclass is not None:
-            fields_include[f'{superclass.lower()}_ptr_id'] = ''  # multi-table inheritance one-to-one relation
+            # multi-table inheritance one-to-one relation
+            fields_include[f'{superclass.lower()}_ptr_id'] = ''
         for plural, _ in all_arrays:  # arrays are one-to-many, and not referenced by this table, so separate them
+            # use all arrays because any arrays of the superclass are accessible with the id of the subclass
             fields_include_all_arrays[plural] = fields_include[plural]
             del fields_include[plural]
 
@@ -172,10 +178,11 @@ def serialize(name, get_result_values_map, fields_include=None):
     # Fetch all the nested object's models from the database
     for o, obj_ids in object_values_map.items():
         object_values_map[o] = serialize(  # serialize the nested object
-            name=o,
-            get_result_values_map=lambda fi: get_values_by_ids(o, obj_ids, fields_include=fi),
-            fields_include=fields_include.get(o, None)
-        )
+                                         name=o,
+                                         get_result_values_map=lambda fi: get_values_by_ids(
+                                             o, obj_ids, fields_include=fi),
+                                         fields_include=fields_include.get(o, None)
+                                         )
 
     # Create a map of nested array names to their models from the database
     # Unlike objects, they are fetched by the parent models' ids
@@ -190,10 +197,11 @@ def serialize(name, get_result_values_map, fields_include=None):
         if fields_include_array is not None:
             fields_include_array[f'{fk_name}_id'] = ''
         array_values_map[(plural, fk_name)] = serialize(  # serialize the nested array
-            name=singular,
-            get_result_values_map=lambda fi: get_values_by_fk_ids(singular, fk_name, result_values_map.keys(), fields_include=fi),
-            fields_include=fields_include_array
-        )
+                                                        name=singular,
+                                                        get_result_values_map=lambda fi: get_values_by_fk_ids(
+                                                            singular, fk_name, result_values_map.keys(), fields_include=fi),
+                                                        fields_include=fields_include_array
+                                                        )
 
     # Substitute nested object ids for their values in the parent object
     for v in result_values_map.values():
@@ -233,23 +241,50 @@ def serialize_by_ids(name, ids, fields_include=None):
     return serialize(name, lambda fi: get_values_by_ids(name, ids, fields_include=fi), fields_include=fields_include)
 
 
+def serialize_Products(product_subclass_name, ids, fields_include=None):
+    """
+    Serialize a list of Products given their ids. This includes schema
+    definitions that do not have tables, such as SubstituteProduct.
+
+    Parameters
+    ----------
+    product_subclass_name: str
+        Either Product or one of its subclasses
+
+    ids: Iterable(int)
+        An iterable of row ids of the Product table.
+
+    fields_include: dict(str, Any)
+        A (possibly nested) dict containing all of the columns of the named
+        table and its related tables that should be included in the serialization.
+
+    Returns
+    -------
+        OrderedDict mapping row ids to OrderedDicts.
+    """
+    res = serialize_by_ids(product_subclass_name, ids, fields_include=fields_include)
+    if fields_include is None or 'SubstituteProducts' in fields_include:
+        for v in res.values():
+            v['SubstituteProducts'] = []
+    return res
+
+
 def serialize_product_id_groups(groups):
     first_products = OrderedDict()
-    first_product_ids = [i for i, _ in groups]
+    first_product_ids, SubstituteProduct_id_lists = zip(*groups)
     for p in obit.get_schema_subclasses('Product'):
         first_products.update(serialize_by_ids(p, first_product_ids))
-    for product_serialized, group_ids in zip(first_products.values(), [group for _, group in groups], strict=True):
-        product_serialized['SubstituteProducts'] = list(serialize_by_ids('Product', group_ids, fields_include=OrderedDict(
-            [(f, '') for f in itertools.chain(
-                obit.OBElement('ProdCode').model_field_names(),
-                obit.OBElement('ProdID').model_field_names(),
-                obit.OBElement('ProdMfr').model_field_names(),
-                obit.OBElement('ProdName').model_field_names(),
-                obit.OBElement('ProdType').model_field_names(),
-            )],
-            # Dimension=OrderedDict(Height_Value=''),
-            # ProdCertifications=[OrderedDict(CertificationDate_Value='')]
-        )).values())
+    for product_serialized, group_ids in zip(first_products.values(), SubstituteProduct_id_lists, strict=True):
+        product_serialized['SubstituteProducts'] = list(
+            serialize_Products(group_ids, fields_include={
+                f: '' for f in [
+                    *obit.OBElement('ProdCode').model_field_names(),
+                    *obit.OBElement('ProdID').model_field_names(),
+                    *obit.OBElement('ProdMfr').model_field_names(),
+                    *obit.OBElement('ProdName').model_field_names(),
+                    *obit.OBElement('ProdType').model_field_names()
+                ]
+            }).values())
     return first_products
 
 

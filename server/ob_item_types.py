@@ -115,8 +115,8 @@ class OBElement:
         self.name = name
         self.description = details['description']
         self.superclass = TaxonomyElement(get_schema_superclass(name))
-        self.item_type = json_to_item_type(details['x-ob-item-type'])
-        self.item_type_group = json_to_item_type_group(details['x-ob-item-type-group'])
+        self.item_type = item_type_from_name(details['x-ob-item-type'])
+        self.item_type_group = item_type_group_from_name(details['x-ob-item-type-group'])
         self.use_primitive_names = use_primitive_names
         self.Value_opts = Value_opts
 
@@ -326,7 +326,21 @@ class OBElement:
                 return models.CharField(verbose_name, **field_kwargs)
 
 
-def json_to_item_type(name: str):
+def item_type_from_name(name: str):
+    """
+    Create an ``ItemType`` instance for a given OB item type in the taxonomy.
+
+    Parameters
+    ----------
+    name: str
+        The name of the OB item type.
+
+    Returns
+    -------
+        ItemType
+        If the OB item type defines enums or units, then an ``ItemTypeEnum`` or
+        ``ItemTypeUnit`` will be returned.
+    """
     it = OB_TAXONOMY['x-ob-item-types'][name]
     kwargs = dict(name=ItemTypeName(name), description=it['description'])
     match it:
@@ -342,7 +356,21 @@ def json_to_item_type(name: str):
             return ItemType(**kwargs)
 
 
-def json_to_item_type_group(name: str):
+def item_type_group_from_name(name: str):
+    """
+    Create an ``ItemTypeGroup`` instance for a given OB item type group in the
+    taxonomy.
+
+    Parameters
+    ----------
+    name: str
+        The name of the OB item type.
+
+    Returns
+    -------
+        ItemTypeGroup or None
+        None is returned if ``name`` is the empty string.
+    """
     if name == '':
         return None
     itg = OB_TAXONOMY['x-ob-item-type-groups'][name]
@@ -350,6 +378,9 @@ def json_to_item_type_group(name: str):
 
 
 def get_ref_schema(ref: str):
+    """
+    Return the name of a definition given a OpenAPI JSON pointer.
+    """
     return ref.split('/')[-1]
 
 
@@ -375,6 +406,9 @@ def is_primitive(name):
 
 
 def get_schema_type(name):
+    """
+    Returns an ``OBType`` given a name of a schema in the OB taxonomy.
+    """
     if is_primitive(name) or name in {f'Value{t.name}' for t in TaxonomyElement}:
         return OBType.Primitive
     match get_schema_defn(name):
@@ -391,6 +425,11 @@ def get_schema_type(name):
 
 
 def ob_object_properties(name):
+    """
+    Returns a dict of properties for a schema definition with type
+    ``OBType.Object``. If the definition inherits from another definition,
+    it assumes the properties are in the second element of an ``allOf`` array.
+    """
     match get_schema_defn(name):
         case {'allOf': [{'$ref': _}, {'properties': props}]}:
             return props
@@ -434,6 +473,24 @@ def arrays_of_ob_object(name):
 
 
 def ob_object_usage_as_array(name, user_schema_names):
+    """
+    Return the names of schema definitions that have an array of ``name`` as a
+    property.
+
+    Parameters
+    ----------
+    name: str
+        The name of the schema definition to find usages for.
+
+    user_schema_names: Iterable(str)
+        An iterable of schema definitions to check the properties of. This lets
+        the caller scope which schema definitions to search in the taxonomy.
+
+    Returns
+    -------
+        Tuple(str)
+        A subset of ``user_schema_names``.
+    """
     uses = []
     for uname in user_schema_names:
         for array_name in ob_object_properties(uname):
