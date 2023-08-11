@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_mysql',
     'rest_framework',
+    'rest_framework.authtoken',
     'server'
 ]
 
@@ -116,7 +117,18 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'server.pagination.ProductsPagination',
     'PAGE_SIZE': 20,
-    'MAX_LIMIT': 100
+    'MAX_LIMIT': 100,
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'server.authentication.APIToken'
+    ],
+}
+
+SUNSPEC = {
+    'MEMBERSHIP_GROUP_NAME': 'SunSpecMembers',
+    'API_PERMISSION_DENIED_MESSAGE': (
+        'You must have an active SunSpec membership to use this API. '
+        'Please email support@sunspec.org to sign up.'
+    ),
 }
 
 AUTH_USER_MODEL = 'server.User'
