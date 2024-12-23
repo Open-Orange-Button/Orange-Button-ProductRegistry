@@ -3,6 +3,10 @@
 ## Installation
 
 1. Use Python 3.10 or later and MySQL Server 8.0 or later.
+1. Install `libmysqlclient`.
+   ```
+   sudo apt-get install libmysqlclient-dev
+   ```
 1. Install the Python dependencies by running `pip3 install -r requirements.txt`.
 1. In `product_registry/settings.py`, edit the path in `DATABASES['default']['OPTIONS']['read_default_file']` to point to your database credentials file (`.cnf`). A `.cnf` file contains:
    ```
