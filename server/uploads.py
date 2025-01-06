@@ -130,12 +130,21 @@ BATTERY_COLUMN_DTYPES = {
 
 BATTERY_COLUMN_VALUE_TO_OB_VALUE = (
     ('Edition of UL 1973', ('Ed. 2 : 2018', 'UL1973_2_2018')),
-    ('Edition of UL 1973', ('Ed. 2: 2018', 'UL1973_2_2018')),
+    ('Edition of UL 1973', ('Ed. 3 : 2022', 'UL1973_2_2018')), # fix me
+    ('Edition of UL 1973', ('Ed. 3: 2022', 'UL1973_2_2018')), # fix me
     ('Technology', ('Lithium Iron Phosphate', 'LiFePO4')),
-    ('Technology', ('Lithium Iron Phospate', 'LiFePO4')),
     ('Technology', ('Lithium Iron\nPhosphate', 'LiFePO4')),
+    ('Technology', ('Lithium iron phosphate', 'LiFePO4')),
+    ('Technology', ('Lithium Iron Phosphate\u2002\u2002', 'LiFePO4')),
+    ('Technology', ('LithiumIron Phosphate', 'LiFePO4')),
+    ('Technology', ('Lithium-Iron Phosphate', 'LiFePO4')),
+    ('Technology', ('Lithium Iron\nPhosphate', 'LiFePO4')),
+    ('Technology', ('Lithium Iron', 'LiFePO4')),
+    ('Technology', ('Lithium Ion', 'LiIon')),
     ('Technology', ('Lithium-Ion', 'LiIon')),
-    ('Technology', ('Lithium Ion', 'LiIon'))
+    ('Technology', ('Lithium Ion Phosphate', 'LiIon')),
+    ('Technology', ('Lithium Ion Battery System', 'LiIon')),
+    ('Technology', ('Lead Acid', 'LeadAcidGel')),  # made up; fix OB value later
 )
 
 BATTERY_TO_OB_FIELD = OrderedDict([
@@ -201,13 +210,14 @@ def upload_cec_battery():
         .replace({np.nan: None})
         .drop_duplicates()
     )
+    breakpoint()
     upload(
         model_name='ProdBattery',
         dataframe=dataframe,
-        mfr_mapping=BATTERY_SUNSPEC_MFR_TO_CEC_MFR,
         field_mapping=BATTERY_TO_OB_FIELD,
         value_mapping=BATTERY_COLUMN_VALUE_TO_OB_VALUE,
         extra_default_fields=BATTERY_EXTRA_DEFAULTS,
+        mfr_mapping=BATTERY_SUNSPEC_MFR_TO_CEC_MFR,
         row_specific_transforms=tuple()
     )
 
@@ -653,3 +663,7 @@ def is_multi_table_inheritance_model(model_class):
 def convert_val(df, col, old_val, val):
     df[col] = df[col].replace(to_replace=[old_val], value=val)
     return df
+
+
+if __name__ == "__main__":
+    upload_cec_battery()
