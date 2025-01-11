@@ -57,6 +57,7 @@ The following steps set up the container.
    docker run --rm -dti --name obpr --ipc host --hostname <username> -p 8000:8000 -v <pwd>:/root/Orange-Button-ProductRegistry orange-button-productregistry:latest /bin/bash
    ```
    where `<username>` is a username for the container, and `<pwd>` is the __absolute__ path to the root directory of the Product Registry code.
+   The `-v` flag mounts the Product Registry code directory so that it can be edited and saved outside of the Docker container.
 1. Open a Bash shell in the Docker container.
    ```
    docker exec -it obpr /bin/bash
