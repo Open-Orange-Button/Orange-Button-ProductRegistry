@@ -12,6 +12,11 @@ For developers without Ubuntu Linux, see the next section for instructions to se
    ```
    sudo apt install libmysqlclient-dev
    ```
+1. Create a Python virtual environment and activate it.
+   ```
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 1. Install the Python dependencies by running `pip3 install -r requirements.txt`.
 1. In `product_registry/settings.py`, edit the path in `DATABASES['default']['OPTIONS']['read_default_file']` to point to your database credentials file (`.cnf`). A `.cnf` file contains:
    ```
@@ -21,6 +26,11 @@ For developers without Ubuntu Linux, see the next section for instructions to se
    user = <username>
    password = <password>
    ```
+1. Run the Django server.
+   ```
+   python3 manage.py runserver
+   ```
+1. Visit `127.0.0.1:8000` to view the Product Registry.
 
 ### Development Environment Setup with Docker
 
@@ -44,9 +54,9 @@ The following steps set up the container.
    ```
 1. Run a Docker container using the image.
    ```
-   docker run --rm -dti --name obpr --ipc host --hostname <username> -p <port>:8000 -v <pwd>:/root/Orange-Button-ProductRegistry orange-button-productregistry:latest /bin/bash
+   docker run --rm -dti --name obpr --ipc host --hostname <username> -p 8000:8000 -v <pwd>:/root/Orange-Button-ProductRegistry orange-button-productregistry:latest /bin/bash
    ```
-   where `<username>` is a username for the container, `<port>` is the port for the Django server to listen on (e.g., 8000), and `<pwd>` is the __absolute__ path to the root directory of the Product Registry code.
+   where `<username>` is a username for the container, and `<pwd>` is the __absolute__ path to the root directory of the Product Registry code.
 1. Open a Bash shell in the Docker container.
    ```
    docker exec -it obpr /bin/bash
@@ -59,7 +69,7 @@ The following steps set up the container.
    ```
    python3 manage.py runserver 0.0.0.0:8000
    ```
-1. Visit `127.0.0.1:<port>` where `<port>` was chosen in a previous step to view the Product Registry.
+1. Visit `127.0.0.1:8000` to view the Product Registry.
 
 ### Creating the database on the MySQL server.
 
