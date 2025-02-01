@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,8 +25,11 @@ SECRET_KEY = 'django-insecure-17amwm^46hswj*dazfod@dxd(--4%qxy8acw$7)8a0m#9$_@s0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+
+
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
 # Application definition
 
@@ -81,7 +84,7 @@ DATABASES = {
     'default': {
         # CREATE DATABASE <NAME> CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_as_cs;
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'product_registry',
+        'NAME': 'product_registry_demo',
         'COLLATION': 'utf8mb4_0900_as_cs',
         'OPTIONS': {
             'charset': 'utf8mb4',

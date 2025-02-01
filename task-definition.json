@@ -1,0 +1,73 @@
+{
+    "family": "ob-product-registry",
+    "taskRoleArn": "arn:aws:iam::545009828484:role/ecsTaskRole",
+    "executionRoleArn": "arn:aws:iam::545009828484:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+        {
+            "name": "ob-product-registry",
+            "image": "545009828484.dkr.ecr.us-east-1.amazonaws.com/prodregapp:latest",
+            "cpu": 1024,
+            "memory": 2048,
+            "portMappings": [
+                {
+                    "containerPort": 8000,
+                    "hostPort": 8000,
+                    "protocol": "tcp",
+                    "name": "ob-product-registry-8000-tcp"
+                }
+            ],
+            "essential": true,
+            "command": [
+                "python",
+                "-m",
+                "gunicorn",
+                "--bind",
+                "0.0.0.0:8000",
+                "--workers",
+                "3",
+                "--timeout",
+                "120",
+                "--access-logfile",
+                "-",
+                "--error-logfile",
+                "-",
+                "product_registry.wsgi:application"
+            ],
+            "environment": [
+                {
+                    "name": "DJANGO_SETTINGS_MODULE",
+                    "value": "product_registry.settings"
+                },
+                {
+                    "name": "ALLOWED_HOSTS",
+                    "value": "ob-product-registry-alb-1345671232.us-east-1.elb.amazonaws.com,productregistry.oballiance.org,localhost,127.0.0.1,172.31.*"
+                }
+            ],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "workingDirectory": "/root/Orange-Button-ProductRegistry",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/ob-product-registry",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                }
+            },
+            "systemControls": []
+        }
+    ],
+    "volumes": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "2048",
+    "runtimePlatform": {
+        "cpuArchitecture": "ARM64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "placementConstraints": []
+}

@@ -1,9 +1,10 @@
+# Use Ubuntu 22.04 as the base image
 FROM ubuntu:22.04
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt install -y \
+# Install system dependencies
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt install -y \
     build-essential \
     git \
     python3 \
@@ -11,19 +12,32 @@ RUN apt-get update \
     python3-venv \
     libmysqlclient-dev \
     mysql-client \
-    vim
+    vim \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /root/Orange-Button-ProductRegistry
-
+# Set the working directory
 WORKDIR /root/Orange-Button-ProductRegistry
 
-ADD requirements.txt requirements.txt
+# Copy the application files to the container
+COPY . /root/Orange-Button-ProductRegistry
 
-RUN python3 -m venv .venv
+# Create and activate a virtual environment
+RUN python3 -m venv /root/Orange-Button-ProductRegistry/.venv
 
-RUN source .venv/bin/activate \
-    && pip3 install -r requirements.txt
+# ✅ Ensure virtual environment is used by default
+ENV PATH="/root/Orange-Button-ProductRegistry/.venv/bin:$PATH"
 
-ADD db.cnf /etc/Orange-Button-ProductRegistry/db.cnf
+# Install Python dependencies inside the virtual environment
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-LABEL version="0.1"
+# Copy database configuration
+COPY db.cnf /etc/Orange-Button-ProductRegistry/db.cnf
+
+# Expose the Django development server port
+EXPOSE 8000
+
+# Run migrations and start Django automatically
+CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && /root/Orange-Button-ProductRegistry/.venv/bin/gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile - product_registry.wsgi:application"]
