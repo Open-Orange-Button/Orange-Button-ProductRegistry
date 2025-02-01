@@ -46,7 +46,9 @@ The following steps set up the container.
    port = <MySQL_port>
    user = <username>
    password = <password>
-   ```
+A sample file for db.cnf has been provided in the development repo. Just open it, update the settings and save it as db.cnf
+Look for file name = dbcnf text file sample.txt in the root directory
+  ```
    Replace the angle bracket placeholders with the database credentials.
 1. Build a Docker image from the Dockerfile.
    ```

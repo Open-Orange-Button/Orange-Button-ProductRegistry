@@ -1,0 +1,5 @@
+[client]
+host = AWSRDSmyqlEndpoint.us-east-1.rds.amazonaws.com
+port = 3306
+user = username (admin)
+password = Enteryourpassword
