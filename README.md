@@ -82,3 +82,6 @@ The following steps set up the container.
    where `<database_name>` is the name of the database (e.g., `product_registry`).
 1. In `product_registry/settings.py`, set `DATABASES['default']['NAME']` equal to `<database_name>`.
 1. Run `python3 manage.py makemigrations` and then `python3 manage.py migrate` to create the database tables.
+
+
+Updated the Dockerfile to run migrations, activate virtual environment and to run manage.py
