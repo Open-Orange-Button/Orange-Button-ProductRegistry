@@ -39,5 +39,5 @@ COPY db.cnf /etc/Orange-Button-ProductRegistry/db.cnf
 # Expose the Django development server port
 EXPOSE 8000
 
-# Run migrations and start Django automatically and keep the container running
+# Run migrations and start Django automatically and keep the container running. Including Gunicorn for production.
 CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && /root/Orange-Button-ProductRegistry/.venv/bin/gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile - product_registry.wsgi:application"]
