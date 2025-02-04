@@ -1,8 +1,5 @@
 {
-    "family": "ob-product-registry",
-    "taskRoleArn": "arn:aws:iam::545009828484:role/ecsTaskRole",
-    "executionRoleArn": "arn:aws:iam::545009828484:role/ecsTaskExecutionRole",
-    "networkMode": "awsvpc",
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:545009828484:task-definition/ob-product-registry:29",
     "containerDefinitions": [
         {
             "name": "ob-product-registry",
@@ -11,28 +8,23 @@
             "memory": 2048,
             "portMappings": [
                 {
+                    "name": "ob-product-registry-8000-tcp",
                     "containerPort": 8000,
                     "hostPort": 8000,
-                    "protocol": "tcp",
-                    "name": "ob-product-registry-8000-tcp"
+                    "protocol": "tcp"
+                },
+                {
+                    "name": "nginx-80-tcp",
+                    "containerPort": 80,
+                    "hostPort": 80,
+                    "protocol": "tcp"
                 }
             ],
             "essential": true,
             "command": [
-                "python",
-                "-m",
-                "gunicorn",
-                "--bind",
-                "0.0.0.0:8000",
-                "--workers",
-                "3",
-                "--timeout",
-                "120",
-                "--access-logfile",
-                "-",
-                "--error-logfile",
-                "-",
-                "product_registry.wsgi:application"
+                "sh",
+                "-c",
+                "/start.sh"
             ],
             "environment": [
                 {
@@ -41,7 +33,7 @@
                 },
                 {
                     "name": "ALLOWED_HOSTS",
-                    "value": "ob-product-registry-alb-1345671232.us-east-1.elb.amazonaws.com,productregistry.oballiance.org,localhost,127.0.0.1,172.31.*"
+                    "value": "*"
                 }
             ],
             "mountPoints": [],
@@ -59,7 +51,50 @@
             "systemControls": []
         }
     ],
+    "family": "ob-product-registry",
+    "taskRoleArn": "arn:aws:iam::545009828484:role/ecsTaskRole",
+    "executionRoleArn": "arn:aws:iam::545009828484:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "revision": 29,
     "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "FARGATE"
+    ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
@@ -69,5 +104,7 @@
         "cpuArchitecture": "ARM64",
         "operatingSystemFamily": "LINUX"
     },
-    "placementConstraints": []
+    "registeredAt": "2025-02-04T01:58:14.031Z",
+    "registeredBy": "arn:aws:iam::545009828484:root",
+    "tags": []
 }

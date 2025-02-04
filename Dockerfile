@@ -1,10 +1,14 @@
 # Use Ubuntu 22.04 as the base image
 FROM ubuntu:22.04
 
-SHELL ["/bin/bash", "-c"]
+# Prevent apt from asking for user input
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt install -y \
+# Set the working directory
+WORKDIR /root/Orange-Button-ProductRegistry
+
+# Install system dependencies and Nginx
+RUN apt-get update && apt-get install -y \
     build-essential \
     git \
     python3 \
@@ -15,29 +19,56 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt install -y \
     vim \
     pkg-config \
     libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    nginx \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /root/Orange-Button-ProductRegistry/.venv
 
-# Set the working directory
-WORKDIR /root/Orange-Button-ProductRegistry
-
-# Copy the application files to the container
-COPY . /root/Orange-Button-ProductRegistry
-
-# Create and activate a virtual environment
-RUN python3 -m venv /root/Orange-Button-ProductRegistry/.venv
-
-# ✅ Ensure virtual environment is used by default
+# Set environment variables
 ENV PATH="/root/Orange-Button-ProductRegistry/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install Python dependencies inside the virtual environment
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy database configuration
 COPY db.cnf /etc/Orange-Button-ProductRegistry/db.cnf
 
-# Expose the Django development server port
-EXPOSE 8000
+# Copy Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Run migrations and start Django automatically and keep the container running. Including Gunicorn for production.
-CMD ["bash", "-c", "python manage.py makemigrations && python manage.py migrate && /root/Orange-Button-ProductRegistry/.venv/bin/gunicorn --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile - --error-logfile - product_registry.wsgi:application"]
+# Copy the application files
+COPY . .
+
+# Copy startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+# Create necessary directories and set permissions
+RUN mkdir -p /root/Orange-Button-ProductRegistry/logs \
+    && mkdir -p /root/Orange-Button-ProductRegistry/staticfiles \
+    && touch /root/Orange-Button-ProductRegistry/logs/django.log \
+    && chmod -R 755 /root/Orange-Button-ProductRegistry/logs
+
+# Run collectstatic and set permissions
+RUN python manage.py collectstatic --noinput \
+    && chmod -R 755 /root/Orange-Button-ProductRegistry/staticfiles/ \
+    && chmod -R 755 /root/Orange-Button-ProductRegistry/
+
+# Remove default nginx site config
+RUN rm -f /etc/nginx/sites-enabled/default
+
+# Expose both Nginx and Gunicorn ports
+EXPOSE 80 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health/ || exit 1
+
+# Start Nginx and Gunicorn
+CMD ["/start.sh"]
