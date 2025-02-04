@@ -25,7 +25,6 @@ Orange Button Product Registry is a centralized platform for managing and regist
 ### Main Application
 1. Visit [https://productregistry.oballiance.org](https://productregistry.oballiance.org)
 2. Navigate to the product listing at `/product/`
-3. Access the admin interface at `/admin/`
 
 ### Health Monitoring
 - Health endpoint: [https://productregistry.oballiance.org/health](https://productregistry.oballiance.org/health)
