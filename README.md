@@ -68,7 +68,7 @@ Orange Button Product Registry is a centralized platform for managing and regist
    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 545009828484.dkr.ecr.us-east-1.amazonaws.com
    ```
 
-2. Pull the image:
+2. Pull the latest Docker image from Amazon Elastic Container Registry ECR:
    ```bash
    docker pull 545009828484.dkr.ecr.us-east-1.amazonaws.com/prodregapp:latest
    ```
@@ -166,7 +166,7 @@ Client Request → Nginx → Gunicorn → Django → MySQL
    default-character-set = utf8mb4
    ```
 
-2. Place in `/etc/Orange-Button-ProductRegistry/db.cnf`
+2. Place in the db.cnf file in the root directory of the cloned repo `/Orange-Button-ProductRegistry/db.cnf`
 
 ### MySQL Requirements
 ```sql
@@ -178,7 +178,7 @@ COLLATION = 'utf8mb4_0900_as_cs'
 CHARACTER SET = utf8mb4
 
 -- Example database creation
-CREATE DATABASE product_registry_demo
+CREATE DATABASE product_registry_demo #change the databasename here 
   CHARACTER SET = 'utf8mb4'
   COLLATE = 'utf8mb4_0900_as_cs';
 ```
@@ -203,7 +203,7 @@ djangorestframework==3.14.0
 - Docker 24+
 
 ### Infrastructure
-- AWS ECS (Fargate)
+- AWS ECS (Fargate): The pre-built image uses ARM64/Linux Architecture 
 - AWS ECR
 - AWS ALB
 - AWS RDS (MySQL 8.0.35)
