@@ -32,9 +32,48 @@ Orange Button Product Registry is a centralized platform for managing and regist
 - Used by load balancers for health checks
 
 <a name="local-deployment"></a>
-## Local Deployment
+## Local Deployment on Docker for Development Setup
 
-### Prerequisites
+
+
+### Clone and Build Locally
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Vishganti/Orange-Button-ProductRegistry.git
+   cd Orange-Button-ProductRegistry
+   ```
+
+2. You can build and run the command using Docker Compose command
+     ```bash
+   docker-compose up --build -d
+   ``` 
+# Check logs
+    ```bash
+   docker-compose logs -f
+   ``` 
+# Stop the service
+docker-compose down
+
+If you run into an error while running the docker container, thats mostly likely due to a db.conf file missing. Use the sample file provided and save it as db.cnf in the root directory and rebuild the container using the above commands
+
+You can also build and run the container using the following commands 
+
+5. Build the Docker image:
+   ```bash
+   docker build -t prodregapp-local .
+   ```
+
+6. Run locally:
+   ```bash
+   docker run -d \
+     --name product-registry-dev \
+     -p 80:80 \
+     -p 8000:8000 \
+     prodregapp-local
+   ```
+
+
+### Prerequisites to run deploy this in AWS Container Services
 1. Install AWS CLI:
    ```bash
    # macOS (using Homebrew)
@@ -92,30 +131,6 @@ Orange Button Product Registry is a centralized platform for managing and regist
 
    # Test endpoints
    curl http://localhost/health/
-   ```
-
-<a name="development-setup"></a>
-## Development Setup
-
-### Clone and Build Locally
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Vishganti/Orange-Button-ProductRegistry.git
-   cd Orange-Button-ProductRegistry
-   ```
-
-2. Build the Docker image:
-   ```bash
-   docker build -t prodregapp-local .
-   ```
-
-3. Run locally:
-   ```bash
-   docker run -d \
-     --name product-registry-dev \
-     -p 80:80 \
-     -p 8000:8000 \
-     prodregapp-local
    ```
 
 <a name="architecture"></a>
