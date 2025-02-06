@@ -34,8 +34,6 @@ Orange Button Product Registry is a centralized platform for managing and regist
 <a name="local-deployment"></a>
 ## Local Deployment on Docker for Development Setup
 
-
-
 ### Clone and Build Locally
 1. Clone the repository:
    ```bash
@@ -46,24 +44,17 @@ Orange Button Product Registry is a centralized platform for managing and regist
 2. You can build and run the command using Docker Compose command
      ```bash
    docker-compose up --build -d
-   ``` 
-# Check logs
-    ```bash
-   docker-compose logs -f
-   ``` 
-# Stop the service
-docker-compose down
-
+   ```
 If you run into an error while running the docker container, thats mostly likely due to a db.conf file missing. Use the sample file provided and save it as db.cnf in the root directory and rebuild the container using the above commands
 
 You can also build and run the container using the following commands 
 
-5. Build the Docker image:
+1. Build the Docker image:
    ```bash
    docker build -t prodregapp-local .
    ```
 
-6. Run locally:
+2. Run locally:
    ```bash
    docker run -d \
      --name product-registry-dev \
