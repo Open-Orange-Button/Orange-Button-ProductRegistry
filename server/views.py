@@ -1,8 +1,14 @@
 from django import shortcuts
 from django.db.models import Q
 from django.core import paginator
-
+from django.http import HttpResponse
 from server import models, ob_item_types as obit, serializers, forms
+
+def health_check(request):
+    """
+    Simple health check endpoint for ALB target group health checks.
+    """
+    return HttpResponse("OK", content_type="text/plain")
 
 
 def get_product_id(kwargs):
