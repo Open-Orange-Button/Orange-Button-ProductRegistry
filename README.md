@@ -45,7 +45,8 @@ Orange Button Product Registry is a centralized platform for managing and regist
      ```bash
    docker-compose up --build -d
    ```
-If you run into an error while running the docker container, thats mostly likely due to a db.conf file missing. Use the sample file provided and save it as db.cnf in the root directory and rebuild the container using the above commands
+Note: If you run into an error while running the docker container, thats mostly likely due to a db.conf file is missing. Use the sample file provided and save it as db.cnf in the root directory and rebuild the container using the above commands. Use VSCode or Notepad in windows to create the db.cnf file
+
 
 You can also build and run the container using the following commands 
 

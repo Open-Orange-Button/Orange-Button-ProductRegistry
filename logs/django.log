@@ -1,0 +1,68 @@
+WARNING 2025-02-14 18:08:27,072 log 41 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:08:27,077 log 42 281473857418272 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:08:27,123 log 41 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:08:27,151 log 41 281473857418272 Not Found: /static/server/favicon.ico
+WARNING 2025-02-14 18:08:32,808 log 41 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:08:32,831 log 41 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:08:32,849 log 40 281473857418272 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:08:32,859 log 40 281473857418272 Not Found: /static/server/favicon.ico
+WARNING 2025-02-14 18:09:11,388 log 40 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:09:11,390 log 41 281473857418272 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:09:17,070 log 41 281473857418272 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:09:17,070 log 42 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:09:19,478 log 41 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:09:19,479 log 42 281473857418272 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:09:19,503 log 42 281473857418272 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:09:19,520 log 41 281473857418272 Not Found: /static/server/favicon.ico
+WARNING 2025-02-14 18:12:30,860 log 21 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:30,911 log 22 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:30,971 log 23 281473521042464 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:12:30,983 log 21 281473521042464 Not Found: /static/server/favicon.ico
+WARNING 2025-02-14 18:12:39,943 log 21 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:39,952 log 21 281473521042464 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:12:39,975 log 21 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:53,189 log 22 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:53,190 log 23 281473521042464 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:12:53,194 log 23 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:54,840 log 23 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:12:54,849 log 23 281473521042464 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:12:54,870 log 23 281473521042464 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:13:27,041 log 23 281472932357152 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:13:27,081 log 22 281472932357152 Not Found: /static/server/css/base.css
+ERROR 2025-02-14 18:32:14,347 log 25 281473835992096 Internal Server Error: /product/health/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/dist-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/root/Orange-Button-ProductRegistry/server/views.py", line 86, in product_detail
+    if len(res := list(serializers.serialize_by_ids(p, [get_product_id(kwargs)]).values())) > 0:
+  File "/root/Orange-Button-ProductRegistry/server/views.py", line 22, in get_product_id
+    return models.Product.objects.filter(**query).values_list('id', flat=True)[0]
+  File "/usr/local/lib/python3.10/dist-packages/django/db/models/query.py", line 452, in __getitem__
+    return qs._result_cache[0]
+IndexError: list index out of range
+WARNING 2025-02-14 18:32:14,396 log 25 281473835992096 Not Found: /favicon.ico
+WARNING 2025-02-14 18:34:30,829 log 26 281473835992096 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:34:30,831 log 27 281473835992096 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:34:30,884 log 27 281473835992096 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:34:30,903 log 27 281473835992096 Not Found: /static/server/favicon.ico
+WARNING 2025-02-14 18:34:32,747 log 27 281473835992096 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:34:32,750 log 25 281473835992096 Not Found: /static/server/Orange-Button.png
+WARNING 2025-02-14 18:34:32,786 log 25 281473835992096 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:34:32,804 log 27 281473835992096 Not Found: /static/server/favicon.ico
+WARNING 2025-02-14 18:34:36,914 log 27 281473835992096 Not Found: /static/server/css/base.css
+WARNING 2025-02-14 18:34:36,918 log 25 281473835992096 Not Found: /static/server/Orange-Button.png
+ERROR 2025-02-14 18:55:48,895 log 25 281472852022304 Internal Server Error: /product/null/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/usr/local/lib/python3.10/dist-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/root/Orange-Button-ProductRegistry/server/views.py", line 86, in product_detail
+    if len(res := list(serializers.serialize_by_ids(p, [get_product_id(kwargs)]).values())) > 0:
+  File "/root/Orange-Button-ProductRegistry/server/views.py", line 22, in get_product_id
+    return models.Product.objects.filter(**query).values_list('id', flat=True)[0]
+  File "/usr/local/lib/python3.10/dist-packages/django/db/models/query.py", line 452, in __getitem__
+    return qs._result_cache[0]
+IndexError: list index out of range

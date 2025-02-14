@@ -7,32 +7,34 @@ services:
       dockerfile: Dockerfile
     container_name: product-registry-dev
     image: prodregapp-local
+    working_dir: /root/Orange-Button-ProductRegistry
     ports:
-      - "80:80"  # Nginx port
-      - "8000:8000"  # Gunicorn port
+      - "80:80"
+      - "8000:8000"
     volumes:
-      - ./:/root/Orange-Button-ProductRegistry  # Application code
       - ./logs:/root/Orange-Button-ProductRegistry/logs
       - ./staticfiles:/root/Orange-Button-ProductRegistry/staticfiles
+      - .:/root/Orange-Button-ProductRegistry
       - ./db.cnf:/etc/Orange-Button-ProductRegistry/db.cnf:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Removed the start.sh mount since it's already copied in Dockerfile
     environment:
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
       - DEBIAN_FRONTEND=noninteractive
       - PATH=/root/Orange-Button-ProductRegistry/.venv/bin:$PATH
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    command: /start.sh  # Using the start.sh that was copied and made executable in Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 5s
-    command: /start.sh  # Use the start script from Dockerfile
     networks:
-      - prod-reg-network
+      - product-registry-network
 
 networks:
-  prod-reg-network:
+  product-registry-network:
     driver: bridge
 
 volumes:

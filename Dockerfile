@@ -5,7 +5,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the working directory
-WORKDIR /root/Orange-Button-ProductRegistry
+WORKDIR /app
 
 # Install system dependencies and Nginx
 RUN apt-get update && apt-get install -y \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
-    python3-venv \
+    python3-mysqldb \
     libmysqlclient-dev \
     mysql-client \
     vim \
@@ -21,47 +21,57 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     curl \
     nginx \
-    && rm -rf /var/lib/apt/lists/* \
-    && python3 -m venv /root/Orange-Button-ProductRegistry/.venv
+    net-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
-ENV PATH="/root/Orange-Button-ProductRegistry/.venv/bin:$PATH"
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Create necessary directories and set permissions
+RUN mkdir -p /app/logs \
+    && mkdir -p /app/staticfiles/server \
+    && mkdir -p /app/static \
+    && touch /app/logs/django.log \
+    && chmod -R 755 /app/logs \
+    && chmod -R 755 /app/staticfiles \
+    && chmod -R 755 /app/static
+
+# Copy the application files
+COPY . .
 
 # Copy database configuration
 COPY db.cnf /etc/Orange-Button-ProductRegistry/db.cnf
 
-# Copy Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy the application files
-COPY . .
+# Remove all default Nginx configurations and set up our own
+RUN rm -f /etc/nginx/sites-enabled/default \
+    && rm -f /etc/nginx/sites-available/default \
+    && rm -f /etc/nginx/conf.d/default.conf \
+    && rm -rf /etc/nginx/conf.d/*.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy startup script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Create necessary directories and set permissions
-RUN mkdir -p /root/Orange-Button-ProductRegistry/logs \
-    && mkdir -p /root/Orange-Button-ProductRegistry/staticfiles \
-    && touch /root/Orange-Button-ProductRegistry/logs/django.log \
-    && chmod -R 755 /root/Orange-Button-ProductRegistry/logs
+# Create static files directory and set permissions
+RUN mkdir -p /app/staticfiles/server \
+    && mkdir -p /app/server/static/server \
+    && chown -R www-data:www-data /app \
+    && chmod -R 755 /app/staticfiles/ \
+    && chmod -R 755 /app/server/static/
 
-# Run collectstatic and set permissions
-RUN python manage.py collectstatic --noinput \
-    && chmod -R 755 /root/Orange-Button-ProductRegistry/staticfiles/ \
-    && chmod -R 755 /root/Orange-Button-ProductRegistry/
-
-# Remove default nginx site config
-RUN rm -f /etc/nginx/sites-enabled/default
+# Create required Nginx directories and set permissions
+RUN mkdir -p /var/log/nginx \
+    && touch /var/log/nginx/access.log /var/log/nginx/error.log \
+    && chown -R www-data:www-data /var/log/nginx \
+    && chmod -R 755 /var/log/nginx
 
 # Expose both Nginx and Gunicorn ports
 EXPOSE 80 8000

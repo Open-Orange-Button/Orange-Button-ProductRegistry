@@ -12,7 +12,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "your-secure-secret-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,productregistry.oballiance.org").split(",")
+# More flexible ALLOWED_HOSTS configuration
+default_allowed_hosts = [
+    'localhost',
+    '127.0.0.1',
+    'productregistry.oballiance.org',
+    '0.0.0.0',  # For local Docker
+    '.amazonaws.com',  # For ECS/ALB domains
+]
+
+# Combine default hosts with any additional hosts from environment
+ALLOWED_HOSTS = default_allowed_hosts + os.getenv("ADDITIONAL_ALLOWED_HOSTS", "").split(",")
+if "" in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.remove("")  # Remove empty string that results from empty ADDITIONAL_ALLOWED_HOSTS
 
 # SunSpec API Configuration
 SUNSPEC = {
@@ -71,7 +83,7 @@ WSGI_APPLICATION = 'product_registry.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv("DB_NAME", "product_registry_demo"),
+        'NAME': os.getenv("DB_NAME", "product_registry"),
         'USER': os.getenv("DB_USER", ""),
         'PASSWORD': os.getenv("DB_PASSWORD", ""),
         'HOST': os.getenv("DB_HOST", ""),
