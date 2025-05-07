@@ -1,0 +1,19 @@
+{% extends 'server/base.html' %}
+
+{% block header %}
+<div class='container'>
+    <h2>
+        {{ product.ProdMfr.Value }}{% if product.ProdName.Value %}: {{ product.ProdName.Value }}{% endif %}
+    </h2>
+    <h6>ProdCode: {{ product.ProdCode.Value }}</h6>
+</div>
+{% endblock %}
+
+{% block main %}
+    <div class='container'>
+        <form action='#' method='post' style='margin-top: 2rem;'>
+            {% csrf_token %}
+            {% include 'server/forms/fields_form.html' %}
+        </form>
+    </div>
+{% endblock %}
