@@ -1,0 +1,712 @@
+import uuid
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+class ApplicationProtocolTypeItemTypeEnum(models.TextChoices):
+    SEP2 = ('SEP2', _('Smart Energy Profile 2'))
+    DNP3 = ('DNP3', _('Distributed Network Protocol 3 '))
+    Modbus = ('Modbus', _('SunSpec Modbus'))
+
+class AreaItemTypeUnit(models.TextChoices):
+    acre = ('acre', _('Acre'))
+    sqft = ('sqft', _('Square Foot'))
+    sqmi = ('sqmi', _('Square Mile'))
+    sqyd = ('sqyd', _('Square Yard'))
+    ha = ('ha', _('Hectare'))
+    sqkm = ('sqkm', _('Square km'))
+    sqm = ('sqm', _('Square metre'))
+
+class BacksheetColorItemTypeEnum(models.TextChoices):
+    Glass = ('Glass', _('Glass'))
+    Black = ('Black', _('Black'))
+    White = ('White', _('White'))
+
+class BatteryChemistryItemTypeEnum(models.TextChoices):
+    Other = ('Other', _('Other'))
+    LeadAcidGel = ('LeadAcidGel', _('Lead Acid Gel'))
+    LeadAcidAGM = ('LeadAcidAGM', _('Lead Acid AGM'))
+    LeadAcidFlooded = ('LeadAcidFlooded', _('Lead Acid Flooded'))
+    LeadAcidSealed = ('LeadAcidSealed', _('Lead Acid Sealed'))
+    LiFePO4 = ('LiFePO4', _('LiFePO4'))
+    LiPoly = ('LiPoly', _('Li Polymer'))
+    NiCd = ('NiCd', _('NiCd'))
+    LiIon = ('LiIon', _('Li-ion'))
+    NiMH = ('NiMH', _('NiMH'))
+    NiFe = ('NiFe', _('NiFe'))
+    NaS = ('NaS', _('NaS'))
+    Hybrid = ('Hybrid', _('Hybrid'))
+    PbC = ('PbC', _('PbC'))
+    LeadAcid = ('LeadAcid', _('Lead Acid'))
+
+class CellCutTypeItemTypeEnum(models.TextChoices):
+    Full = ('Full', _('Full'))
+    Half = ('Half', _('Half'))
+    Third = ('Third', _('Third'))
+    Quarter = ('Quarter', _('Quarter'))
+    Fifth = ('Fifth', _('Fifth'))
+    Sixth = ('Sixth', _('Sixth'))
+
+class CellTechnologyItemTypeEnum(models.TextChoices):
+    Other = ('Other', _('Other'))
+    MonoSi = ('MonoSi', _('monoSi'))
+    PolySi = ('PolySi', _('polySi'))
+    HJT = ('HJT', _('HJT'))
+    ASi = ('ASi', _('aSi'))
+    ThinFilm = ('ThinFilm', _('thinfilm'))
+    CIGS = ('CIGS', _('CIGS'))
+    CdTe = ('CdTe', _('CdTe'))
+    ASi_tandem = ('ASi_tandem', _('aSi tandem'))
+
+class ChecksumTypeItemTypeEnum(models.TextChoices):
+    CRC = ('CRC', _('CRC'))
+    MD5 = ('MD5', _('MD5'))
+    SHA1 = ('SHA1', _('SHA1'))
+    SHA2 = ('SHA2', _('SHA2'))
+    SHA3 = ('SHA3', _('SHA3'))
+    Keccak_256 = ('Keccak_256', _('Keccak-256'))
+
+class ContactTypeItemTypeEnum(models.TextChoices):
+    Other = ('Other', _('Other'))
+    FireMarshal = ('FireMarshal', _('FireMarshal'))
+    Owner = ('Owner', _('Owner'))
+    OffTaker = ('OffTaker', _('OffTaker'))
+    Inspector = ('Inspector', _('Inspector'))
+    Engineer = ('Engineer', _('Engineer'))
+    Originator = ('Originator', _('Originator'))
+    Installer = ('Installer', _('Installer'))
+    Investor = ('Investor', _('Investor'))
+    PermittingOfficial = ('PermittingOfficial', _('PermittingOfficial'))
+    ProjectManager = ('ProjectManager', _('ProjectManager'))
+    Salesperson = ('Salesperson', _('Salesperson'))
+    ReportPreparer = ('ReportPreparer', _('ReportPreparer'))
+    Referrer = ('Referrer', _('Referrer'))
+    Security = ('Security', _('Security'))
+    Safety = ('Safety', _('Safety'))
+    Technician = ('Technician', _('Technician'))
+    Occupant = ('Occupant', _('Occupant'))
+
+class DecimalPercentItemTypeUnit(models.TextChoices):
+    decimal_percent = ('decimal_percent', _('Decimal Percent'))
+
+class DurationItemTypeUnit(models.TextChoices):
+    Y = ('Y', _('Year'))
+    M = ('M', _('Month'))
+    D = ('D', _('Day'))
+    H = ('H', _('Hour'))
+    MM = ('MM', _('Minute'))
+    S = ('S', _('Second'))
+    Q = ('Q', _('Quarter'))
+    WK = ('WK', _('Week'))
+
+class ElectricCurrentItemTypeUnit(models.TextChoices):
+    A = ('A', _('Ampere'))
+
+class EnergyItemTypeUnit(models.TextChoices):
+    Boe = ('Boe', _('Barrel of Oil Equivalent'))
+    Btu = ('Btu', _('British Thermal Unit'))
+    ft_lb = ('ft_lb', _('Foot-Pound'))
+    MBoe = ('MBoe', _('Thousand Barrels of Oil Equivalent'))
+    Mcfe = ('Mcfe', _('Thousand Cubic Foot Equivalent'))
+    MMBoe = ('MMBoe', _('Millions of Barrels of Oil Equivalent'))
+    MMBTU = ('MMBTU', _('Millions of BTU'))
+    Cal = ('Cal', _('Calorie'))
+    J = ('J', _('Joule'))
+    kJ = ('kJ', _('Kilojoule'))
+    kWh = ('kWh', _('Kilowatt-Hours'))
+    mJ = ('mJ', _('mJ'))
+    MWh = ('MWh', _('Megawatt-Hour'))
+    GWh = ('GWh', _('Gigawatt-Hour'))
+    TWh = ('TWh', _('Terawatt-Hour'))
+    MMcfe = ('MMcfe', _('Million Cubic Foot Equivalent'))
+    Bcfe = ('Bcfe', _('Billion Cubic Foot Equivalent'))
+    Tcfe = ('Tcfe', _('Trillion Cubic Foot Equivalent'))
+    MWM = ('MWM', _('Megawatt-Month'))
+    GWM = ('GWM', _('Gigawatt-Month'))
+    Wh = ('Wh', _('Watt-Hours'))
+    VAh = ('VAh', _('Volt-ampere-hours'))
+
+class EntityRoleItemTypeEnum(models.TextChoices):
+    Originator = ('Originator', _('Originator'))
+    Installer = ('Installer', _('Installer'))
+    AuthorityHavingJurisdiction = ('AuthorityHavingJurisdiction', _('Authority Having Jurisdiction (AHJ)'))
+    Manufacturer = ('Manufacturer', _('Manufacturer'))
+    Surety = ('Surety', _('Surety'))
+    Insurer = ('Insurer', _('Insurer'))
+    TestLab = ('TestLab', _('Test Lab'))
+    CertificationAgency = ('CertificationAgency', _('Certification Agency'))
+    Aggregator = ('Aggregator', _('Aggregator'))
+    PropertyOwner = ('PropertyOwner', _('Property Owner'))
+    Financier = ('Financier', _('Financier'))
+    QualifyingAgency = ('QualifyingAgency', _('Qualifying Agency'))
+
+class FrameColorItemTypeEnum(models.TextChoices):
+    Other = ('Other', _('Other'))
+    None_ = ('None', _('None'))
+    Silver = ('Silver', _('Silver'))
+    Black = ('Black', _('Black'))
+
+class FrameMaterialTypeItemTypeEnum(models.TextChoices):
+    AnodizedAluminum = ('AnodizedAluminum', _('AnodizedAluminum'))
+    AnodizedAluminumAlloy = ('AnodizedAluminumAlloy', _('AnodizedAluminumAlloy'))
+    Frameless = ('Frameless', _('Frameless'))
+    TransparentAluminum = ('TransparentAluminum', _('TransparentAluminum'))
+    FlexiblePlastic = ('FlexiblePlastic', _('FlexiblePlastic'))
+
+class IdentifierTypeItemTypeEnum(models.TextChoices):
+    Other = ('Other', _('Other'))
+    UUID = ('UUID', _('UUID'))
+    UPC = ('UPC', _('UPC'))
+    ProdCode = ('ProdCode', _('ProdCode'))
+    LEI = ('LEI', _('Legal Entity Identifier'))
+    PEN = ('PEN', _('Private Enterprise Number'))
+    DID = ('DID', _('Decentralized Identifier'))
+    DUNS = ('DUNS', _('DUNS'))
+    DPP_EU = ('DPP_EU', _('EU Digital Product Passport'))
+    FEIN = ('FEIN', _('Federal Employer Identification Number'))
+    UEI = ('UEI', _('Unique Entity Identifier'))
+
+class LengthItemTypeUnit(models.TextChoices):
+    ft = ('ft', _('Foot'))
+    in_ = ('in', _('Inch'))
+    mi = ('mi', _('Mile'))
+    nmi = ('nmi', _('Nautical Mile'))
+    yd = ('yd', _('Yard'))
+    cm = ('cm', _('Centimetre'))
+    dm = ('dm', _('Decimetre'))
+    km = ('km', _('Kilometre'))
+    m = ('m', _('Metre'))
+    mm = ('mm', _('Millimetre'))
+
+class LocationDeterminationMethodItemTypeEnum(models.TextChoices):
+    Unknown = ('Unknown', _('Unknown'))
+    GPS = ('GPS', _('GPS'))
+    Survey = ('Survey', _('Survey'))
+    AerialImage = ('AerialImage', _('AerialImage'))
+    EngineeringReport = ('EngineeringReport', _('EngineeringReport'))
+    AddressGeocoding = ('AddressGeocoding', _('AddressGeocoding'))
+
+class LocationTypeItemTypeEnum(models.TextChoices):
+    DeviceSpecific = ('DeviceSpecific', _('DeviceSpecific'))
+    SiteEntrance = ('SiteEntrance', _('SiteEntrance'))
+    GeneralProximity = ('GeneralProximity', _('GeneralProximity'))
+    Warehouse = ('Warehouse', _('Warehouse'))
+
+class MassItemTypeUnit(models.TextChoices):
+    lb = ('lb', _('Pound'))
+    oz = ('oz', _('Ounce'))
+    ozt = ('ozt', _('Troy Ounce'))
+    T = ('T', _('Ton'))
+    t = ('t', _('Tonne'))
+    kg = ('kg', _('Kilogram'))
+    kT = ('kT', _('Thousand Tons'))
+    MT = ('MT', _('Million Tons'))
+    GT = ('GT', _('Billion Tons'))
+    kt = ('kt', _('Kilotonne'))
+    Mt = ('Mt', _('Megatonne'))
+    Gt = ('Gt', _('Gigatonne'))
+
+class ModuleRatingConditionItemTypeEnum(models.TextChoices):
+    STC = ('STC', _('Standard Test Condition'))
+    PTC = ('PTC', _('PVUSA Test Condition'))
+    NOCT = ('NOCT', _('Nominal Operating Cell Temperature'))
+    LIC = ('LIC', _('Low Irradiance Condition'))
+
+class PhysicalLayerTypeItemTypeEnum(models.TextChoices):
+    Ethernet = ('Ethernet', _('Ethernet'))
+    RS485 = ('RS485', _('RS485'))
+    RS232 = ('RS232', _('RS232'))
+
+class PlaneAngleItemTypeUnit(models.TextChoices):
+    Degree = ('Degree', _('Degree'))
+    rad = ('rad', _('Radian'))
+
+class PowerItemTypeUnit(models.TextChoices):
+    hp = ('hp', _('Horsepower'))
+    GW = ('GW', _('Gigawatt'))
+    kW = ('kW', _('Kilowatt'))
+    MW = ('MW', _('Megawatt'))
+    TW = ('TW', _('Terawatt'))
+    W = ('W', _('Watt'))
+    var = ('var', _('Volt-ampere reactive'))
+    VA = ('VA', _('Volt-ampere'))
+    MVA = ('MVA', _('MVA'))
+    kVA = ('kVA', _('kVA'))
+
+class PreferredContactMethodItemTypeEnum(models.TextChoices):
+    Email = ('Email', _('Email'))
+    WorkPhone = ('WorkPhone', _('WorkPhone'))
+    CellPhone = ('CellPhone', _('CellPhone'))
+    HomePhone = ('HomePhone', _('HomePhone'))
+    CellTextMessage = ('CellTextMessage', _('CellTextMessage'))
+
+class ProdTypeItemTypeEnum(models.TextChoices):
+    ProdModule = ('ProdModule', _('Module'))
+    ProdOptimizer = ('ProdOptimizer', _('Optimizer'))
+    ProdDCDisconnectSwitch = ('ProdDCDisconnectSwitch', _('DCDisconnectSwitch'))
+    ProdACDisconnectSwitch = ('ProdACDisconnectSwitch', _('ACDisconnectSwitch'))
+    ProdInverter = ('ProdInverter', _('Inverter'))
+    ProdTracker = ('ProdTracker', _('Tracker'))
+    ProdMetStation = ('ProdMetStation', _('MetStation'))
+    ProdTransformer = ('ProdTransformer', _('Transformer'))
+    ProdBattery = ('ProdBattery', _('Battery'))
+    ProdBatteryManagementSystem = ('ProdBatteryManagementSystem', _('BatteryManagementSystem'))
+    ProdLogger = ('ProdLogger', _('Logger'))
+    ProdMeter = ('ProdMeter', _('Meter'))
+    ProdString = ('ProdString', _('String'))
+    ProdMounting = ('ProdMounting', _('Mounting'))
+    ProdCombiner = ('ProdCombiner', _('Combiner'))
+    ProdRacking = ('ProdRacking', _('Racking'))
+    ProdWire = ('ProdWire', _('Wire'))
+    ProdGenerator = ('ProdGenerator', _('Generator'))
+    ProdThermostat = ('ProdThermostat', _('Thermostat'))
+
+class ScopeTypeItemTypeEnum(models.TextChoices):
+    Project = ('Project', _('Project'))
+    PVSystem = ('PVSystem', _('PVSystem'))
+    Site = ('Site', _('Site'))
+    Device = ('Device', _('Device'))
+    Portfolio = ('Portfolio', _('Portfolio'))
+    GeoRegion = ('GeoRegion', _('GeoRegion'))
+    Task = ('Task', _('Task'))
+    Assembly = ('Assembly', _('Assembly'))
+    Component = ('Component', _('Component'))
+
+class SpecificationTypeItemTypeEnum(models.TextChoices):
+    Weight = ('Weight', _('Weight'))
+    Height = ('Height', _('Height'))
+    Width = ('Width', _('Width'))
+    Length = ('Length', _('Length'))
+    OutputVoltage = ('OutputVoltage', _('OutputVoltage'))
+    OutputPower = ('OutputPower', _('OutputPower'))
+    InputVoltage = ('InputVoltage', _('InputVoltage'))
+    InputPower = ('InputPower', _('InputPower'))
+    OutputCurrent = ('OutputCurrent', _('OutputCurrent'))
+    InputCurrent = ('InputCurrent', _('InputCurrent'))
+    OperatingTemperatureHighLimit = ('OperatingTemperatureHighLimit', _('OperatingTemperatureHighLimit'))
+    OperatingTemperatureLowLimit = ('OperatingTemperatureLowLimit', _('OperatingTemperatureLowLimit'))
+
+class StandardTypeItemTypeEnum(models.TextChoices):
+    IEC61215_2016 = ('IEC61215_2016', _('IEC 61215:2016'))
+    IEC61215_2021 = ('IEC61215_2021', _('IEC 61215:2021'))
+    IEC61853_1_2011 = ('IEC61853_1_2011', _('IEC 61853-1:2011'))
+    UL61730_2017 = ('UL61730_2017', _('UL 61730:2017'))
+    UL1741SC_2023 = ('UL1741SC_2023', _('UL 1741 SC:2023'))
+    IEC61646_2008 = ('IEC61646_2008', _('IEC 61646:2008'))
+    SAEJ3072_2021 = ('SAEJ3072_2021', _('SAE J3072:2021'))
+    SAEJ3068_2018 = ('SAEJ3068_2018', _('SAE J3068:2018'))
+    IEC61701_2020 = ('IEC61701_2020', _('IEC 61701:2020 '))
+    IEC61730_2016 = ('IEC61730_2016', _('IEC 61730:2016'))
+    IEC60364_4_41_2005 = ('IEC60364_4_41_2005', _('IEC60364-4-41:2005'))
+    IEC62108_2022 = ('IEC62108_2022', _('IEC 62108:2022'))
+    IEC61683_1999 = ('IEC61683_1999', _('IEC 61683:1999'))
+    IEC62109_1_2010 = ('IEC62109_1_2010', _('IEC62109-1:2010'))
+    IEC62109_2_2011 = ('IEC62109_2_2011', _('IEC62109-2:2011'))
+    IEC61010_1_2010 = ('IEC61010_1_2010', _('IEC 61010-1:2010'))
+    UL1973_2_2018 = ('UL1973_2_2018', _('UL1973 Edition 2: 2018'))
+    CSIP_2018 = ('CSIP_2018', _('CSIP Version 2.1:2018'))
+    UL1741SB_2021 = ('UL1741SB_2021', _('UL1741SB:2021'))
+    UL1741SA_2021 = ('UL1741SA_2021', _('UL 1741SA 2021'))
+    UL1741SA_2021_8 = ('UL1741SA_2021_8', _('UL1741 Supplement A 2021 Section 8'))
+    UL1741SA_2021_9 = ('UL1741SA_2021_9', _('UL1741 Supplement A 2021 Section 9'))
+    UL1741SA_2021_10 = ('UL1741SA_2021_10', _('UL1741 Supplement A 2021 Section 10'))
+    UL1741SA_2021_11 = ('UL1741SA_2021_11', _('UL1741 Supplement A 2021 Section 11'))
+    UL1741SA_2021_12 = ('UL1741SA_2021_12', _('UL1741 Supplement A 2021 Section 12'))
+    UL1741SA_2021_13 = ('UL1741SA_2021_13', _('UL1741 Supplement A 2021 Section 13'))
+    UL1741SA_2021_14 = ('UL1741SA_2021_14', _('UL1741 Supplement A 2021 Section 14'))
+    UL1741SA_2021_15 = ('UL1741SA_2021_15', _('UL1741 Supplement A 2021 Section 15'))
+    UL1741SA_2021_17 = ('UL1741SA_2021_17', _('UL1741 Supplement A 2021 Section 17'))
+    UL1741SA_2021_18 = ('UL1741SA_2021_18', _('UL1741 Supplement A 2021 Section 18'))
+    UL1703_2002 = ('UL1703_2002', _('UL 1703:2002'))
+    UL9540_2016 = ('UL9540_2016', _('UL 9540:2016'))
+    UL9540_2020 = ('UL9540_2020', _('UL 9540:2020'))
+    JA12_2019 = ('JA12_2019', _('Joint Appendix 12 : 2019'))
+    IECTS63019_2019 = ('IECTS63019_2019', _('IEC TS 63109 Ed. 1'))
+    SPEOM_2021 = ('SPEOM_2021', _('SPE O&M Guide v5.0:2021'))
+    IEEE2030_5_2018 = ('IEEE2030_5_2018', _('IEEE 2030.5 : 2018'))
+    IEEE2800_2022 = ('IEEE2800_2022', _('IEEE 2800 : 2022'))
+    UL1973_3_2022 = ('UL1973_3_2022', _('UL1973 Edition 3: 2022'))
+    IEEE2030_5_2023 = ('IEEE2030_5_2023', _('IEEE2030.5 : 2023'))
+
+class TempCoefficientItemTypeUnit(models.TextChoices):
+    V_per_Cel = ('V_per_Cel', _('Voltage per degree Celsius'))
+    A_per_Cel = ('A_per_Cel', _('Ampere per degree Celsius'))
+    W_per_Cel = ('W_per_Cel', _('Watts per degree Celsius'))
+    percent_per_Cel = ('percent_per_Cel', _('Percent change per degree Celsius'))
+    pu_per_Cel = ('pu_per_Cel', _('Change per unit, per degree Celsius'))
+
+class TemperatureItemTypeUnit(models.TextChoices):
+    Cel = ('Cel', _('Celsius'))
+    K = ('K', _('Kelvin'))
+    F = ('F', _('Fahrenheit'))
+
+class TransportLayerTypeItemTypeEnum(models.TextChoices):
+    TCP = ('TCP', _('TCP'))
+    Serial = ('Serial', _('Serial'))
+
+class VoltageItemTypeUnit(models.TextChoices):
+    V = ('V', _('Volt'))
+    kV = ('kV', _('Kilovolt'))
+    MV = ('MV', _('Megavolt'))
+    GV = ('GV', _('Gigavolt'))
+
+class WarrantyItemTypeEnum(models.TextChoices):
+    Other = ('Other', _('Other'))
+    Performance = ('Performance', _('Performance'))
+    Service = ('Service', _('Service'))
+    Material = ('Material', _('Material'))
+
+class Entity(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    Email_Value = models.CharField(blank=True, max_length=500)
+    EntityRole_Value = models.CharField(max_length=max(map(len, EntityRoleItemTypeEnum)), choices=EntityRoleItemTypeEnum)
+    LegalEntityIdentifier_Value = models.CharField(blank=True, max_length=20)
+    TaxID_Value = models.CharField(blank=True, max_length=20)
+    URL_Value = models.URLField(blank=True)
+    WorkPhone_Value = models.CharField(blank=True, max_length=15)
+    Addresses = models.ManyToManyField('Address')
+    AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
+    Contacts = models.ManyToManyField('Contact')
+    CreditRatings = models.ManyToManyField('CreditRating')
+    PaymentMethods = models.ManyToManyField('PaymentMethod')
+
+class Product(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    FileFolderURL_Value = models.URLField(blank=True)
+    ManufacturerUPC_Value = models.CharField(blank=True, max_length=500)
+    ProdCode_Value = models.CharField(blank=True, max_length=50, unique=True, editable=False)
+    ProdDatasheet_Value = models.CharField(blank=True, max_length=500)
+    ProdID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    ProdMfr_Value = models.CharField(blank=True, max_length=500)
+    ProdName_Value = models.CharField(blank=True, max_length=500)
+    ProdType_Value = models.CharField(max_length=max(map(len, ProdTypeItemTypeEnum)), choices=ProdTypeItemTypeEnum)
+    Dimension = models.ForeignKey('Dimension', on_delete=models.CASCADE)
+    ProdInstructions = models.ManyToManyField('ProdInstruction')
+    AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
+    CommunicationStacks = models.ManyToManyField('CommunicationStack')
+    Packages = models.ManyToManyField('Package')
+    ProdCertifications = models.ManyToManyField('ProdCertification')
+    ProdQualifications = models.ManyToManyField('ProdQualification')
+    ProdSpecifications = models.ManyToManyField('ProdSpecification')
+    SourceCountries = models.ManyToManyField('SourceCountry')
+    SubstituteProducts = models.ManyToManyField('SubstituteProduct')
+    Warranties = models.ManyToManyField('Warranty')
+
+class Address(models.Model):
+    AddrLine1_Value = models.CharField(blank=True, max_length=500)
+    AddrLine2_Value = models.CharField(blank=True, max_length=500)
+    AddrLine3_Value = models.CharField(blank=True, max_length=500)
+    AddressID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    AddressType_Value = models.CharField(blank=True, max_length=500)
+    City_Value = models.CharField(blank=True, max_length=500)
+    Country_Value = models.CharField(blank=True, max_length=500)
+    County_Value = models.CharField(blank=True, max_length=500)
+    Description_Value = models.CharField(blank=True, max_length=500)
+    StateProvince_Value = models.CharField(blank=True, max_length=500)
+    ZipPostalCode_Value = models.CharField(blank=True, max_length=500)
+    Location = models.ForeignKey('Location', on_delete=models.CASCADE)
+
+class AlternativeIdentifier(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    Identifier_Value = models.CharField(blank=True, max_length=500)
+    IdentifierType_Value = models.CharField(max_length=max(map(len, IdentifierTypeItemTypeEnum)), choices=IdentifierTypeItemTypeEnum)
+    SourceName_Value = models.CharField(blank=True, max_length=500)
+
+class CertificationAgency(Entity):
+    CertificationAgencyID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    CertificationAgencyName_Value = models.CharField(blank=True, max_length=500)
+
+class Checksum(models.Model):
+    ChecksumDetail_Value = models.CharField(blank=True, max_length=500)
+    ChecksumKey_Value = models.CharField(blank=True, max_length=500)
+    ChecksumType_Value = models.CharField(max_length=max(map(len, ChecksumTypeItemTypeEnum)), choices=ChecksumTypeItemTypeEnum)
+
+class Comment(models.Model):
+    CommentDate_Value = models.DateTimeField(blank=True, null=True)
+    CommentID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    CommentText_Value = models.CharField(blank=True, max_length=500)
+    Scope = models.ForeignKey('Scope', on_delete=models.CASCADE)
+    Tags = models.ManyToManyField('Tag')
+    Contacts = models.ManyToManyField('Contact')
+
+class CommunicationStack(models.Model):
+    ApplicationProtocol_Value = models.CharField(max_length=max(map(len, ApplicationProtocolTypeItemTypeEnum)), choices=ApplicationProtocolTypeItemTypeEnum)
+    CertificationStandard_Value = models.CharField(max_length=max(map(len, StandardTypeItemTypeEnum)), choices=StandardTypeItemTypeEnum)
+    PhysicalLayer_Value = models.CharField(max_length=max(map(len, PhysicalLayerTypeItemTypeEnum)), choices=PhysicalLayerTypeItemTypeEnum)
+    TransportLayer_Value = models.CharField(max_length=max(map(len, TransportLayerTypeItemTypeEnum)), choices=TransportLayerTypeItemTypeEnum)
+
+class Contact(models.Model):
+    ContactID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    ContactType_Value = models.CharField(max_length=max(map(len, ContactTypeItemTypeEnum)), choices=ContactTypeItemTypeEnum)
+    Description_Value = models.CharField(blank=True, max_length=500)
+    Email_Value = models.CharField(blank=True, max_length=500)
+    FirstName_Value = models.CharField(blank=True, max_length=500)
+    HomePhone_Value = models.CharField(blank=True, max_length=15)
+    LastName_Value = models.CharField(blank=True, max_length=500)
+    MiddleName_Value = models.CharField(blank=True, max_length=500)
+    MobilePhone_Value = models.CharField(blank=True, max_length=15)
+    PreferredContactMethod_Value = models.CharField(max_length=max(map(len, PreferredContactMethodItemTypeEnum)), choices=PreferredContactMethodItemTypeEnum)
+    Timezone_Value = models.CharField(blank=True, max_length=500)
+    Title_Value = models.CharField(blank=True, max_length=500)
+    URL_Value = models.URLField(blank=True)
+    WorkPhone_Value = models.CharField(blank=True, max_length=15)
+    Address = models.ForeignKey('Address', on_delete=models.CASCADE)
+
+class CreditRating(models.Model):
+    CreditScore_Value = models.CharField(blank=True, max_length=500)
+    CreditScoreSource_Value = models.CharField(blank=True, max_length=500)
+
+class DCInput(models.Model):
+    MPPTNumber_Value = models.IntegerField(blank=True, null=True)
+    PowerDCContinuousMax_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit)
+    PowerDCContinuousMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageDCMax_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageDCMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageDCMin_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageDCMin_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageDCNom_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageDCNom_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    MPPTs = models.ManyToManyField('MPPT')
+
+class DCOutput(models.Model):
+    CurrentDCMax_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit)
+    CurrentDCMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerDCContinuousMax_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit)
+    PowerDCContinuousMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerDCMax_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit)
+    PowerDCMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageDCMax_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageDCMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageDCMin_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageDCMin_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageDCNom_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageDCNom_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerDCPeaks = models.ManyToManyField('PowerDCPeak')
+
+class Dimension(models.Model):
+    Height_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    Height_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    Length_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    Length_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    Mass_Unit = models.CharField(max_length=max(map(len, MassItemTypeUnit)), choices=MassItemTypeUnit)
+    Mass_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    Weight_Unit = models.CharField(max_length=max(map(len, MassItemTypeUnit)), choices=MassItemTypeUnit)
+    Weight_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    Width_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    Width_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+
+class Firmware(models.Model):
+    FirmwareVersion_Value = models.CharField(blank=True, max_length=500)
+    Checksum = models.ForeignKey('Checksum', on_delete=models.CASCADE)
+
+class Location(models.Model):
+    Altitude_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    Altitude_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    Description_Value = models.CharField(blank=True, max_length=500)
+    Elevation_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    Elevation_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    Latitude_Unit = models.CharField(max_length=max(map(len, PlaneAngleItemTypeUnit)), choices=PlaneAngleItemTypeUnit)
+    Latitude_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    LocationDeterminationMethod_Value = models.CharField(max_length=max(map(len, LocationDeterminationMethodItemTypeEnum)), choices=LocationDeterminationMethodItemTypeEnum)
+    LocationID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    LocationType_Value = models.CharField(max_length=max(map(len, LocationTypeItemTypeEnum)), choices=LocationTypeItemTypeEnum)
+    Longitude_Unit = models.CharField(max_length=max(map(len, PlaneAngleItemTypeUnit)), choices=PlaneAngleItemTypeUnit)
+    Longitude_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+
+class MPPT(models.Model):
+    CurrentDCMax_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit)
+    CurrentDCMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    CurrentShortCircuitMax_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit)
+    CurrentShortCircuitMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    MPPTInputStrings_Value = models.IntegerField(blank=True, null=True)
+    VoltageMPPTMax_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageMPPTMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageMPPTMin_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageMPPTMin_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+
+class ModuleElectRating(models.Model):
+    CurrentAtMaximumPower_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit)
+    CurrentAtMaximumPower_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    CurrentShortCircuit_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit)
+    CurrentShortCircuit_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    ModuleRatingCondition_Value = models.CharField(max_length=max(map(len, ModuleRatingConditionItemTypeEnum)), choices=ModuleRatingConditionItemTypeEnum)
+    PowerDC_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit)
+    PowerDC_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageAtMaximumPower_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageAtMaximumPower_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageOpenCircuit_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageOpenCircuit_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+
+class Package(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    Quantity_Value = models.IntegerField(blank=True, null=True)
+    Dimension = models.ForeignKey('Dimension', on_delete=models.CASCADE)
+
+class PaymentMethod(models.Model):
+    PaymentMethodName_Value = models.CharField(blank=True, max_length=500)
+    PaymentToken_Value = models.CharField(blank=True, max_length=500)
+    Tags = models.ManyToManyField('Tag')
+    AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
+    Comments = models.ManyToManyField('Comment')
+
+class PowerDCPeak(models.Model):
+    Duration_Unit = models.CharField(max_length=max(map(len, DurationItemTypeUnit)), choices=DurationItemTypeUnit)
+    Duration_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerDC_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit)
+    PowerDC_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+
+class ProdBattery(Product):
+    AltitudeInstallationMax_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    AltitudeInstallationMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    BatteryChemistryType_Value = models.CharField(max_length=max(map(len, BatteryChemistryItemTypeEnum)), choices=BatteryChemistryItemTypeEnum)
+    DepthOfDischargeMax_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit)
+    DepthOfDischargeMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    EfficiencyBatteryRoundTrip_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit)
+    EfficiencyBatteryRoundTrip_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    EnergyCapacityNominal_Unit = models.CharField(max_length=max(map(len, EnergyItemTypeUnit)), choices=EnergyItemTypeUnit)
+    EnergyCapacityNominal_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    EnergyCapacityUsable_Unit = models.CharField(max_length=max(map(len, EnergyItemTypeUnit)), choices=EnergyItemTypeUnit)
+    EnergyCapacityUsable_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureMaximumOperating_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit)
+    TemperatureMaximumOperating_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureMinimumOperating_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit)
+    TemperatureMinimumOperating_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    DCInput = models.ForeignKey('DCInput', on_delete=models.CASCADE)
+    DCOutput = models.ForeignKey('DCOutput', on_delete=models.CASCADE)
+
+class ProdCell(Product):
+    CellColor_Value = models.CharField(blank=True, max_length=500)
+    CellCutType_Value = models.CharField(max_length=max(map(len, CellCutTypeItemTypeEnum)), choices=CellCutTypeItemTypeEnum)
+    CellTechnologyType_Value = models.CharField(max_length=max(map(len, CellTechnologyItemTypeEnum)), choices=CellTechnologyItemTypeEnum)
+
+class ProdCertification(models.Model):
+    CertificateValue_Value = models.CharField(blank=True, max_length=500)
+    CertificationDate_Value = models.DateField(blank=True, null=True)
+    CertificationExpirationDate_Value = models.DateField(blank=True, null=True)
+    CertificationName_Value = models.CharField(blank=True, max_length=500)
+    CertificationStandard_Value = models.CharField(max_length=max(map(len, StandardTypeItemTypeEnum)), choices=StandardTypeItemTypeEnum)
+    Description_Value = models.CharField(blank=True, max_length=500)
+    FileFolderURL_Value = models.URLField(blank=True)
+    CertificationAgency = models.ForeignKey('CertificationAgency', on_delete=models.CASCADE)
+    Firmware = models.ForeignKey('Firmware', on_delete=models.CASCADE)
+    TestLab = models.ForeignKey('TestLab', on_delete=models.CASCADE)
+
+class ProdGlazing(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    FileFolderURL_Value = models.URLField(blank=True)
+    GlazingMaterial_Value = models.CharField(blank=True, max_length=500)
+    Height_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    Height_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+
+class ProdModule(Product):
+    BacksheetColor_Value = models.CharField(max_length=max(map(len, BacksheetColorItemTypeEnum)), choices=BacksheetColorItemTypeEnum)
+    BacksheetMaterial_Value = models.CharField(blank=True, max_length=500)
+    BypassDiodeQuantity_Value = models.IntegerField(blank=True, null=True)
+    CableConnector_Value = models.CharField(blank=True, max_length=500)
+    CableCrossSectionArea_Unit = models.CharField(max_length=max(map(len, AreaItemTypeUnit)), choices=AreaItemTypeUnit)
+    CableCrossSectionArea_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    CableLength_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit)
+    CableLength_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    CellCount_Value = models.IntegerField(blank=True, null=True)
+    CellStringsParallelQuantity_Value = models.IntegerField(blank=True, null=True)
+    CellsInSeries_Value = models.IntegerField(blank=True, null=True)
+    FrameColor_Value = models.CharField(max_length=max(map(len, FrameColorItemTypeEnum)), choices=FrameColorItemTypeEnum)
+    FrameMaterialType_Value = models.CharField(max_length=max(map(len, FrameMaterialTypeItemTypeEnum)), choices=FrameMaterialTypeItemTypeEnum)
+    FuseSeriesRating_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit)
+    FuseSeriesRating_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    IsBIPV_Value = models.BooleanField(blank=True, null=True)
+    IsBifacial_Value = models.BooleanField(blank=True, null=True)
+    JunctionBoxProtectionCertification_Value = models.CharField(blank=True, max_length=500)
+    ModuleArea_Unit = models.CharField(max_length=max(map(len, AreaItemTypeUnit)), choices=AreaItemTypeUnit)
+    ModuleArea_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    ModuleBusbarDescription_Value = models.CharField(blank=True, max_length=500)
+    ModuleEfficiency_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit)
+    ModuleEfficiency_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerSTC_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit)
+    PowerSTC_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerToleranceMax_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit)
+    PowerToleranceMax_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    PowerToleranceMin_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit)
+    PowerToleranceMin_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    ShadeResponse_Value = models.CharField(blank=True, max_length=500)
+    TemperatureCoefficientMaxPowerCurrent_Unit = models.CharField(max_length=max(map(len, TempCoefficientItemTypeUnit)), choices=TempCoefficientItemTypeUnit)
+    TemperatureCoefficientMaxPowerCurrent_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureCoefficientMaxPowerVoltage_Unit = models.CharField(max_length=max(map(len, TempCoefficientItemTypeUnit)), choices=TempCoefficientItemTypeUnit)
+    TemperatureCoefficientMaxPowerVoltage_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureCoefficientMaximumPower_Unit = models.CharField(max_length=max(map(len, TempCoefficientItemTypeUnit)), choices=TempCoefficientItemTypeUnit)
+    TemperatureCoefficientMaximumPower_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureCoefficientOpenCircuitVoltage_Unit = models.CharField(max_length=max(map(len, TempCoefficientItemTypeUnit)), choices=TempCoefficientItemTypeUnit)
+    TemperatureCoefficientOpenCircuitVoltage_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureCoefficientShortCircuitCurrent_Unit = models.CharField(max_length=max(map(len, TempCoefficientItemTypeUnit)), choices=TempCoefficientItemTypeUnit)
+    TemperatureCoefficientShortCircuitCurrent_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureMaximumOperating_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit)
+    TemperatureMaximumOperating_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureMinimumOperating_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit)
+    TemperatureMinimumOperating_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    TemperatureNOCT_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit)
+    TemperatureNOCT_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    VoltageMaximumSystem_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit)
+    VoltageMaximumSystem_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    ProdCell = models.ForeignKey('ProdCell', on_delete=models.CASCADE)
+    ProdGlazing = models.ForeignKey('ProdGlazing', on_delete=models.CASCADE)
+    ModuleElectRatings = models.ManyToManyField('ModuleElectRating')
+
+class ProdQualification(models.Model):
+    QualificationExpirationDate_Value = models.DateField(blank=True, null=True)
+    QualificationListingDate_Value = models.DateField(blank=True, null=True)
+    QualificationNotes_Value = models.CharField(blank=True, max_length=500)
+    UpdateLast_Value = models.DateTimeField(blank=True, null=True)
+    QualifyingAgency = models.ForeignKey('QualifyingAgency', on_delete=models.CASCADE)
+
+class ProdSpecification(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    SpecificationName_Value = models.CharField(blank=True, max_length=500)
+    SpecificationType_Value = models.CharField(max_length=max(map(len, SpecificationTypeItemTypeEnum)), choices=SpecificationTypeItemTypeEnum)
+    SpecificationUnit_Value = models.CharField(blank=True, max_length=500)
+    SpecificationValue_Value = models.CharField(blank=True, max_length=500)
+
+class QualifyingAgency(Entity):
+    QualifyingAgencyID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    QualifyingAgencyName_Value = models.CharField(blank=True, max_length=500)
+
+class Scope(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    FileFolderURL_Value = models.URLField(blank=True)
+    ScopeID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    ScopeType_Value = models.CharField(max_length=max(map(len, ScopeTypeItemTypeEnum)), choices=ScopeTypeItemTypeEnum)
+    Location = models.ForeignKey('Location', on_delete=models.CASCADE)
+
+class SourceCountry(models.Model):
+    AssignedCostPercentage_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit)
+    AssignedCostPercentage_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    CountryOfManufacture_Value = models.CharField(blank=True, max_length=500)
+    CountryOfManufactureIsNotPFE_Value = models.BooleanField(blank=True, null=True)
+    CountryOfOwnershipIsNotPFE_Value = models.BooleanField(blank=True, null=True)
+    CountryOfOwnershipforPFE_Value = models.CharField(blank=True, max_length=500)
+
+class SubstituteProduct(models.Model):
+    ProdCode_Value = models.CharField(blank=True, max_length=50, unique=True, editable=False)
+    ProdID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    ProdMfr_Value = models.CharField(blank=True, max_length=500)
+    ProdName_Value = models.CharField(blank=True, max_length=500)
+    ProdType_Value = models.CharField(max_length=max(map(len, ProdTypeItemTypeEnum)), choices=ProdTypeItemTypeEnum)
+
+class TestLab(Entity):
+    TestLabID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    TestLabName_Value = models.CharField(blank=True, max_length=500)
+
+class Warranty(models.Model):
+    Description_Value = models.CharField(blank=True, max_length=500)
+    FileFolderURL_Value = models.URLField(blank=True)
+    WarrantyDuration_Unit = models.CharField(max_length=max(map(len, DurationItemTypeUnit)), choices=DurationItemTypeUnit)
+    WarrantyDuration_Value = models.DecimalField(max_digits=32, decimal_places=16, blank=True, null=True)
+    WarrantyEffectiveDate_Value = models.DateField(blank=True, null=True)
+    WarrantyExpirationDate_Value = models.DateField(blank=True, null=True)
+    WarrantyID_Value = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    WarrantyName_Value = models.CharField(blank=True, max_length=500)
+    WarrantyType_Value = models.CharField(max_length=max(map(len, WarrantyItemTypeEnum)), choices=WarrantyItemTypeEnum)
+
+class ProdInstruction(models.Model):
+    Value = models.CharField(blank=True, max_length=500)
+
+class Tag(models.Model):
+    Value = models.CharField(blank=True, max_length=500)
