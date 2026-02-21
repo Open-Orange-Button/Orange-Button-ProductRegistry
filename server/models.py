@@ -379,7 +379,7 @@ class Product(models.Model):
     ProdMfr_Value = models.CharField(blank=True, max_length=500)
     ProdName_Value = models.CharField(blank=True, max_length=500)
     ProdType_Value = models.CharField(max_length=max(map(len, ProdTypeItemTypeEnum)), choices=ProdTypeItemTypeEnum, blank=True)
-    Dimension = models.ForeignKey('Dimension', on_delete=models.CASCADE, unique=True)
+    Dimension = models.OneToOneField('Dimension', on_delete=models.CASCADE)
     ProdInstructions = models.ManyToManyField('ProdInstruction')
     AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
     CommunicationStacks = models.ManyToManyField('CommunicationStack')
@@ -403,7 +403,7 @@ class Address(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     StateProvince_Value = models.CharField(blank=True, max_length=500)
     ZipPostalCode_Value = models.CharField(blank=True, max_length=500)
-    Location = models.ForeignKey('Location', on_delete=models.CASCADE, unique=True)
+    Location = models.OneToOneField('Location', on_delete=models.CASCADE)
 
 class AlternativeIdentifier(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
@@ -424,7 +424,7 @@ class Comment(models.Model):
     CommentDate_Value = models.DateTimeField(blank=True, null=True)
     CommentID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
     CommentText_Value = models.CharField(blank=True, max_length=500)
-    Scope = models.ForeignKey('Scope', on_delete=models.CASCADE, unique=True)
+    Scope = models.OneToOneField('Scope', on_delete=models.CASCADE)
     Tags = models.ManyToManyField('Tag')
     Contacts = models.ManyToManyField('Contact')
 
@@ -449,7 +449,7 @@ class Contact(models.Model):
     Title_Value = models.CharField(blank=True, max_length=500)
     URL_Value = models.URLField(blank=True)
     WorkPhone_Value = models.CharField(blank=True, max_length=15)
-    Address = models.ForeignKey('Address', on_delete=models.CASCADE, unique=True)
+    Address = models.OneToOneField('Address', on_delete=models.CASCADE)
 
 class CreditRating(models.Model):
     CreditScore_Value = models.CharField(blank=True, max_length=500)
@@ -497,7 +497,7 @@ class Dimension(models.Model):
 class Firmware(models.Model):
     FirmwareVersion_Value = models.CharField(blank=True, max_length=500)
     Products = models.ManyToManyField('Product')
-    Checksum = models.ForeignKey('Checksum', on_delete=models.CASCADE, unique=True)
+    Checksum = models.OneToOneField('Checksum', on_delete=models.CASCADE)
 
 class Location(models.Model):
     Altitude_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit, blank=True)
@@ -540,7 +540,7 @@ class ModuleElectRating(models.Model):
 class Package(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     Quantity_Value = models.IntegerField(blank=True, null=True)
-    Dimension = models.ForeignKey('Dimension', on_delete=models.CASCADE, unique=True)
+    Dimension = models.OneToOneField('Dimension', on_delete=models.CASCADE)
 
 class PaymentMethod(models.Model):
     PaymentMethodName_Value = models.CharField(blank=True, max_length=500)
@@ -571,8 +571,8 @@ class ProdBattery(Product):
     TemperatureMaximumOperating_Value = models.FloatField(blank=True, null=True)
     TemperatureMinimumOperating_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit, blank=True)
     TemperatureMinimumOperating_Value = models.FloatField(blank=True, null=True)
-    DCInput = models.ForeignKey('DCInput', on_delete=models.CASCADE, unique=True)
-    DCOutput = models.ForeignKey('DCOutput', on_delete=models.CASCADE, unique=True)
+    DCInput = models.OneToOneField('DCInput', on_delete=models.CASCADE)
+    DCOutput = models.OneToOneField('DCOutput', on_delete=models.CASCADE)
 
 class ProdCell(Product):
     CellColor_Value = models.CharField(blank=True, max_length=500)
@@ -588,7 +588,7 @@ class ProdCertification(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     FileFolderURL_Value = models.URLField(blank=True)
     CertificationAgency = models.ForeignKey('CertificationAgency', on_delete=models.CASCADE, null=True)
-    Firmware = models.ForeignKey('Firmware', on_delete=models.CASCADE, unique=True)
+    Firmware = models.OneToOneField('Firmware', on_delete=models.CASCADE)
     TestLab = models.ForeignKey('TestLab', on_delete=models.CASCADE, null=True)
 
 class ProdGlazing(models.Model):
@@ -647,8 +647,8 @@ class ProdModule(Product):
     TemperatureNOCT_Value = models.FloatField(blank=True, null=True)
     VoltageMaximumSystem_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit, blank=True)
     VoltageMaximumSystem_Value = models.FloatField(blank=True, null=True)
-    ProdCell = models.ForeignKey('ProdCell', on_delete=models.CASCADE, unique=True)
-    ProdGlazing = models.ForeignKey('ProdGlazing', on_delete=models.CASCADE, unique=True)
+    ProdCell = models.OneToOneField('ProdCell', on_delete=models.CASCADE)
+    ProdGlazing = models.OneToOneField('ProdGlazing', on_delete=models.CASCADE)
     ModuleElectRatings = models.ManyToManyField('ModuleElectRating')
 
 class ProdQualification(models.Model):
@@ -674,7 +674,7 @@ class Scope(models.Model):
     FileFolderURL_Value = models.URLField(blank=True)
     ScopeID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
     ScopeType_Value = models.CharField(max_length=max(map(len, ScopeTypeItemTypeEnum)), choices=ScopeTypeItemTypeEnum, blank=True)
-    Location = models.ForeignKey('Location', on_delete=models.CASCADE, unique=True)
+    Location = models.OneToOneField('Location', on_delete=models.CASCADE)
 
 class SourceCountry(models.Model):
     AssignedCostPercentage_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit, blank=True)

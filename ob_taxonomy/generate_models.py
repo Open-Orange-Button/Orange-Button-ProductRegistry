@@ -200,13 +200,11 @@ def generate_foreign_key(name):
     return ast.Assign(
         targets=[ast.Name(id=name, ctx=ast.Store())],
         value=ast.Call(
-            func=ast.Attribute(value=ast.Name(id='models', ctx=ast.Load()), attr='ForeignKey', ctx=ast.Load()),
+            func=ast.Attribute(value=ast.Name(id='models', ctx=ast.Load()), attr='OneToOneField', ctx=ast.Load()),
             args=[ast.Constant(value=name)],
             keywords=[
                 ast.keyword(arg='on_delete',
                             value=ast.Attribute(value=ast.Name(id='models', ctx=ast.Load()), attr='CASCADE', ctx=ast.Load())),
-                ast.keyword(arg='unique', value=ast.Constant(value=Ellipsis)),
-                ast.keyword(arg='null', value=ast.Constant(value=Ellipsis)),
             ]
         )
     )
