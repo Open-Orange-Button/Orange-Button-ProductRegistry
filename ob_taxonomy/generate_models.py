@@ -24,7 +24,8 @@ def generate_django_enum_field(django_enum_name: str):
                     )
                 ]
             )),
-            ast.keyword(arg='choices', value=ast.Name(id=django_enum_name, ctx=ast.Load()))
+            ast.keyword(arg='choices', value=ast.Name(id=django_enum_name, ctx=ast.Load())),
+            ast.keyword(arg='blank', value=ast.Constant(value=True)),
         ],
     )
 
@@ -52,36 +53,36 @@ def generate_django_enum_class(django_enum_name: str, enums: type[ob_models.OBIt
 
 
 COMMON_KWARGS = dict(blank=True, null=True)
-DECIMAL_FIELD_KWARGS = dict(max_digits=32, decimal_places=16, **COMMON_KWARGS)
+FLOAT_FIELD_KWARGS = COMMON_KWARGS
 CHAR_FIELD_KWARGS = dict(blank=True)
 SCHEMA_NAME_FIELD_CONF = dict(
     FileFolderURL=dict(func=partial(models.URLField, **CHAR_FIELD_KWARGS)),
     HomePhone=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=15)),
     MobilePhone=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=15)),
-    ProdCode=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=50, unique=True, editable=False)),
+    ProdCode=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, null=True, max_length=50, unique=True, editable=False, db_index=True)),
     TaxID=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=20)),
     WorkPhone=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=15)),
     URL=dict(func=partial(models.URLField, **CHAR_FIELD_KWARGS)),
 )
 OB_ITEM_TYPE_FIELD_CONF = dict(
-    AreaItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
+    AreaItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
     BooleanItemType=dict(func=partial(models.BooleanField, **COMMON_KWARGS)),
     DateItemType=dict(func=partial(models.DateField, **COMMON_KWARGS)),
     DateTimeItemType=dict(func=partial(models.DateTimeField, **COMMON_KWARGS)),
-    DecimalItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    DecimalPercentItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    DurationItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    ElectricCurrentItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    EnergyItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
+    DecimalItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    DecimalPercentItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    DurationItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    ElectricCurrentItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    EnergyItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
     LegalEntityIdentifierItemType=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=20)),
-    LengthItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    MassItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
+    LengthItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    MassItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
     IntegerItemType=dict(func=partial(models.IntegerField, **COMMON_KWARGS)),
-    PlaneAngleItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    PowerItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
+    PlaneAngleItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    PowerItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
     StringItemType=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=500)),
-    TempCoefficientItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
-    TemperatureItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
+    TempCoefficientItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
+    TemperatureItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
     UUIDItemType=dict(
         ast=ast.Call(
             func=ast.Attribute(value=ast.Name(id='models', ctx=ast.Load()), attr='UUIDField', ctx=ast.Load()),
@@ -89,11 +90,12 @@ OB_ITEM_TYPE_FIELD_CONF = dict(
             keywords=[
                 ast.keyword(arg='unique', value=ast.Constant(value=True)),
                 ast.keyword(arg='editable', value=ast.Constant(value=False)),
+                ast.keyword(arg='db_index', value=ast.Constant(value=True)),
                 ast.keyword(arg='default', value=ast.Attribute(value=ast.Name(id='uuid', ctx=ast.Load()), attr='uuid4', ctx=ast.Load())),
-                ],
+            ],
         ),
     ),
-    VoltageItemType=dict(func=partial(models.DecimalField, **DECIMAL_FIELD_KWARGS)),
+    VoltageItemType=dict(func=partial(models.FloatField, **FLOAT_FIELD_KWARGS)),
 )
 SCHEMA_FIELD_CONF_FUNCS = dict(
     IDsAreUUIDs=lambda name: OB_ITEM_TYPE_FIELD_CONF['UUIDItemType'] if name.endswith('ID') else None,
@@ -166,7 +168,7 @@ def build_django_enum_class_context(ob_item_type: ob_models.OBItemType, context)
         enums = ob_item_type.units.all()
     else:
         return
-    context['django_enum_classes'][class_name] = (class_name, enums)
+    context['django_enum_classes'][class_name] = (class_name, enums.order_by('name'))
 
 
 def build_ob_object_context(ob_object: ob_models.OBObject, context, composes=False):
@@ -203,6 +205,8 @@ def generate_foreign_key(name):
             keywords=[
                 ast.keyword(arg='on_delete',
                             value=ast.Attribute(value=ast.Name(id='models', ctx=ast.Load()), attr='CASCADE', ctx=ast.Load())),
+                ast.keyword(arg='unique', value=ast.Constant(value=Ellipsis)),
+                ast.keyword(arg='null', value=ast.Constant(value=Ellipsis)),
             ]
         )
     )
