@@ -89,6 +89,30 @@ class OBObject(models.Model):
     def __str__(self):
         return self.name
 
+    def all_elements(self):
+        return (
+            self.properties.all()
+            | OBElement.objects.filter(obobject__in=self.comprises.all())
+        )
+
+    def all_nested_objects(self):
+        return (
+            self.nested_objects.all()
+            | OBObject.objects.filter(obobject__in=self.comprises.all())
+        )
+
+    def all_element_arrays(self):
+        return (
+            self.element_arrays.all()
+            | OBArrayOfElement.objects.filter(obobject__in=self.comprises.all())
+        )
+
+    def all_object_arrays(self):
+        return (
+            self.object_arrays.all()
+            | OBArrayOfObject.objects.filter(obobject__in=self.comprises.all())
+        )
+
 
 class OBObjectComprisal(models.Model):
     class Method(models.TextChoices):
