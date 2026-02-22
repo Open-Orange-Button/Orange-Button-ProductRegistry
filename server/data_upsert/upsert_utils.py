@@ -10,15 +10,18 @@ def compute_insert(rows, target_table_name, pk, superclass=None):
     select column_name from (describe {target_table_name})
     where column_type = 'VARCHAR'
     """)
-    varchar_fill = duckdb.sql("""
-    pivot (
-        select column_name, '' as value from (
-            select * from varchar_columns
-            except
-            select * from varchar_present
-        )
-    ) on column_name using first(value)
+    varchar_needs_fill = duckdb.sql("""
+    select * from varchar_columns
+    except
+    select * from varchar_present
     """)
+    varchar_fill = None
+    if len(varchar_needs_fill) > 0:
+        varchar_fill = duckdb.sql("""
+        pivot (
+            select column_name, '' as value from varchar_needs_fill
+        ) on column_name using first(value)
+        """)
     if superclass is None:
         max_id = duckdb.sql(f"""
         select coalesce(max({pk}), 0) from {target_table_name}
@@ -27,16 +30,15 @@ def compute_insert(rows, target_table_name, pk, superclass=None):
         select
             row_number() over () + {max_id} as {pk},
             *,
-        from rows cross join varchar_fill
+        from rows {'cross join varchar_fill' if varchar_fill is not None else ''}
         """)
     else:
-        # import pdb;pdb.set_trace()
         to_insert = duckdb.sql(f"""
         select
             superclass.{pk},
             rows.*,
-            varchar_fill.*,
-        from rows cross join varchar_fill
+           {'varchar_fill.*,' if varchar_fill is not None else ''}
+        from rows {'cross join varchar_fill' if varchar_fill is not None else ''}
         join superclass using (csv_row_id)
         """)
     return to_insert
