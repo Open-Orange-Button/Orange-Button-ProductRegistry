@@ -388,7 +388,6 @@ class Product(models.Model):
     ProdQualifications = models.ManyToManyField('ProdQualification')
     ProdSpecifications = models.ManyToManyField('ProdSpecification')
     SourceCountries = models.ManyToManyField('SourceCountry')
-    SubstituteProducts = models.ManyToManyField('SubstituteProduct')
     Warranties = models.ManyToManyField('Warranty')
 
 class Address(models.Model):
@@ -683,13 +682,6 @@ class SourceCountry(models.Model):
     CountryOfManufactureIsNotPFE_Value = models.BooleanField(blank=True, null=True)
     CountryOfOwnershipIsNotPFE_Value = models.BooleanField(blank=True, null=True)
     CountryOfOwnershipforPFE_Value = models.CharField(blank=True, max_length=500)
-
-class SubstituteProduct(models.Model):
-    ProdCode_Value = models.CharField(blank=True, null=True, max_length=50, unique=True, editable=False, db_index=True)
-    ProdID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
-    ProdMfr_Value = models.CharField(blank=True, max_length=500)
-    ProdName_Value = models.CharField(blank=True, max_length=500)
-    ProdType_Value = models.CharField(max_length=max(map(len, ProdTypeItemTypeEnum)), choices=ProdTypeItemTypeEnum, blank=True)
 
 class TestLab(Entity):
     TestLabID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
