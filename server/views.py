@@ -14,6 +14,9 @@ import server.models as models
 import server.forms as forms
 
 
+CURRENTLY_IMPLEMENTED_PRODUCTS = ('prodbattery', 'prodmodule')
+
+
 def model_to_ob_json(model):
     ob_json = defaultdict(dict)
     ob_model = ob_models.OBObject.objects.get(name=model._meta.object_name)
@@ -91,24 +94,27 @@ def get_form_dict(ob_model, d, parent_name=''):
     return form_dict
 
 
-def product_detail_by_ProdID(request, ProdID_Value=None, product=None):
-    # product_serialized = model_to_ob_json(product)
-    # ob_model = ob_models.OBObject.objects.get(name=product._meta.object_name)
-    # return render(
-    #     request,
-    #     'server/product_detail.html',
-    #     dict(
-    #         product=product,
-    #     )
-    # )
-    if product is None:
-        product = get_object_or_404(models.Product, ProdID_Value=ProdID_Value)
-    try:
-        product = product.prodmodule
-        name = 'ProdModule'
-    except models.ProdModule.DoesNotExist:
-        product = product.prodbattery
-        name = 'ProdBattery'
+def determine_product_subclass(product, subclass_reverse_names=None):
+    if subclass_reverse_names is None:
+        # subclass_reverse_names = map(str.lower, ob_models.OBObject.filter(comprises__name='Product').values_list('name', flat=True))
+        subclass_reverse_names = CURRENTLY_IMPLEMENTED_PRODUCTS
+    for subclass_name in subclass_reverse_names:
+        try:
+            product = getattr(product, subclass_name)
+            return product
+        except AttributeError, models.models.ObjectDoesNotExist:
+            pass
+
+
+def product_detail_by_ProdID(request, ProdID_Value):
+    # subclass_reverse_names = map(str.lower, ob_models.OBObject.filter(comprises__name='Product').values_list('name', flat=True))
+    subclass_reverse_names = CURRENTLY_IMPLEMENTED_PRODUCTS
+    product = get_object_or_404(
+        models.Product.objects.select_related(*subclass_reverse_names),
+        ProdID_Value=ProdID_Value,
+    )
+    product = determine_product_subclass(product, subclass_reverse_names=subclass_reverse_names)
+    name = type(product).__name__
     product_serialized = model_to_ob_json(product)
     print(product_serialized)
     ob_model = ob_models.OBObject.objects.get(name=name)
@@ -126,6 +132,19 @@ def product_detail_by_ProdID(request, ProdID_Value=None, product=None):
 def product_detail_by_ProdCode(request, ProdCode_Value):
     product = get_object_or_404(models.Product, ProdCode_Value=ProdCode_Value)
     return product_detail_by_ProdID(request, product=product)
+
+
+def product_json(request, ProdID_Value):
+    subclass_reverse_names = CURRENTLY_IMPLEMENTED_PRODUCTS
+    product = get_object_or_404(
+        models.Product.objects.select_related(*subclass_reverse_names),
+        ProdID_Value=ProdID_Value,
+    )
+    product = determine_product_subclass(product, subclass_reverse_names=subclass_reverse_names)
+    ob_json = model_to_ob_json(product)
+    response = JsonResponse(ob_json, json_dumps_params=dict(indent=4))
+    response['Content-Disposition'] = f'attachment; filename="{ProdID_Value}.json"'
+    return response
 
 
 def product_list(request, **kwargs):
