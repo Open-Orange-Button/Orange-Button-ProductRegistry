@@ -27,7 +27,7 @@
                 <td class='text-wrap'>{{ p.ProdName_Value }}</td>
                 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
                 <td>
-                    <a href="{% url 'webpage:product-detail-prodid' p.ProdID_Value %}" target='_blank' class='btn btn-sm btn-secondary' type='button'>
+                    <a href="{% url 'product:detail-prodid' p.ProdID_Value %}" target='_blank' class='btn btn-sm btn-secondary' type='button'>
                         View Details
                     </a>
                 </td>
