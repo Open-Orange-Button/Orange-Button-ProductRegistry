@@ -1,0 +1,112 @@
+<div class='container'>
+    <div class='row'>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Value</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.Value %}
+                        {% include widget.template_name %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>StartTime</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.StartTime %}
+                        {% if widget %}
+                            {% include widget.template_name %}
+                        {% else %}
+                            <input readonly class='form-control-plaintext' value='Not Applicable' />
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Decimals</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.Decimals %}
+                        {% if widget %}
+                            <label for='{{ widget.name }}'>
+                                {% include widget.template_name %}
+                            </label>
+                        {% else %}
+                            <input readonly class='form-control-plaintext' value='Not Applicable' />
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Unit</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                {% with widget=widget.subwidgets_dict.Unit %}
+                    {% if widget %}
+                        {% include widget.template_name %}
+                    {% else %}
+                        <input readonly class='form-control-plaintext' value='Not Applicable' />
+                    {% endif %}
+                {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>EndTime</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                    {% with widget=widget.subwidgets_dict.EndTime %}
+                        {% if widget %}
+                            {% include widget.template_name %}
+                        {% else %}
+                            <input readonly class='form-control-plaintext' value='Not Applicable' />
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        <div class='col'>
+            <div class='row'>
+                <div class='col'>
+                    <strong>Precision</strong>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='col'>
+                {% with widget=widget.subwidgets_dict.Precision %}
+                    {% if widget %}
+                        {% include widget.template_name %}
+                    {% else %}
+                        <input readonly class='form-control-plaintext' value='Not Applicable' />
+                    {% endif %}
+                {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

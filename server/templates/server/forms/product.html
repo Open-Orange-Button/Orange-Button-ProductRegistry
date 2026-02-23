@@ -1,0 +1,32 @@
+{% extends 'server/base.html' %}
+
+{% block header %}
+<div class='container'>
+    <div class='row'>
+        <div class='col'>
+            <h1 class='h2'>
+                {{ product.ProdMfr.Value }}{% if product.ProdName.Value %}: {{ product.ProdName.Value }}{% endif %}
+            </h1>
+            <h2 class='h6'>ProdCode: {{ product.ProdCode.Value }}</h2>
+        </div>
+        <div class='col text-end'>
+            <a
+                type='button'
+                class='btn btn-warning btn-lg ms-5'
+                href='{% url 'webpage:product-json' product.ProdID.Value %}'
+            >
+                <i class='bi bi-download'></i> Download OB JSON
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block main %}
+    <div class='container'>
+        <form action='#' method='post' style='margin-top: 2rem;'>
+            {% csrf_token %}
+            {% include 'server/forms/fields_form.html' %}
+        </form>
+    </div>
+{% endblock %}
