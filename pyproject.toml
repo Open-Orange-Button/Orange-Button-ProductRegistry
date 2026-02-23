@@ -15,4 +15,5 @@ dev = [
     "duckdb>=1.4.4",
     "jupyterlab>=4.5.3",
     "polars>=1.37.1",
+    "tqdm>=4.67.3",
 ]
