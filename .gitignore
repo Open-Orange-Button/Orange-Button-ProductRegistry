@@ -12,7 +12,7 @@ wheels/
 .venv
 
 # Other
-*.sqlite
+*.sqlite3
 *.output
 *.error
 *.cobaltlog
