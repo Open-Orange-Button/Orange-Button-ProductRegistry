@@ -1,0 +1,26 @@
+#navbar-logo {
+    max-width: 3.5rem;
+}
+
+.form-control {
+    padding-top: .2rem;
+    padding-bottom: .2rem;
+}
+
+.form-select {
+    padding-top: .2rem;
+    padding-bottom: .2rem;
+}
+.btn-short {
+    padding-top: .0rem;
+    padding-bottom: .0rem;
+}
+.checklist-template-question-label-collapse-btn {
+    --bs-btn-color: none;
+    --bs-btn-border-color: none;
+    padding-top: .0rem;
+    padding-bottom: .0rem;
+    white-space: wrap;
+    text-align: left;
+    font-weight: bold;
+}

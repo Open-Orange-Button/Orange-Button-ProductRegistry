@@ -1,0 +1,23 @@
+[project]
+name = "ob-prodreg"
+version = "0.1.0"
+description = ""
+readme = "README.rst"
+license = "LICENSE"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=6.0.2",
+    "gunicorn>=25.1.0",
+    "whitenoise[brotli]>=6.11.0",
+]
+
+[dependency-groups]
+dev = [
+    "duckdb>=1.4.4",
+    "jupyterlab>=4.5.3",
+    "polars[pyarrow]>=1.37.1",
+    "tqdm>=4.67.3",
+]
+mysql = [
+    "mysqlclient>=2.2.8",
+]

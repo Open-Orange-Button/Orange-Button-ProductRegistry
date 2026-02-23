@@ -1,0 +1,120 @@
+{% if obobject.elements %}
+<table class='table table-sm table-hover'>
+    <thead>
+        <tr>
+            <th class='col-sm-4' scope='col'>Field</th>
+            <th class='col-sm-5' scope='col'>Value</th>
+            <th class='col-sm-3' scope='col'>Unit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, primitives in obobject.elements.items %}
+        <tr>
+            <th scope='row'>{{ name }}</th>
+            <td class='text-wrap'>{{ primitives.Value }}</td>
+            <td class='text-wrap'>{{ primitives.Unit }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% if obobject.nested_objects or obobject.element_arrays or obobject.object_arrays %}
+{% with accordion_name='accordion-'|add:prefix %}
+<div class='accordion' id='{{ accordion_name }}'>
+    {% for name, nested_object in obobject.nested_objects.items %}
+    {% with accordion_item_name=accordion_name|add:'-'|add:name|lower %}
+    <div class='accordion-item'>
+        <h2 class='accordion-header'>
+            <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#{{ accordion_item_name }}-collapse' aria-expanded='false' aria-controls='{{ accordion_item_name }}-collapse'>
+                {{ name }}
+            </button>
+        </h2>
+        <div id='{{ accordion_item_name }}-collapse' class='accordion-collapse collapse' data-bs-parent='#{{ accordion_item_name }}'>
+            <div class='accordion-body'>
+                {% if nested_object %}
+                {% include 'server/obobject.html' with prefix=accordion_item_name obobject=nested_object %}
+                {% else %}
+                No {{ name }} has been added.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+    {% for name, element_array in obobject.element_arrays.items %}
+    {% with accordion_item_name=accordion_name|add:'-'|add:name|lower %}
+    <div class='accordion-item'>
+        <h2 class='accordion-header'>
+            <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#{{ accordion_item_name }}-collapse' aria-expanded='false' aria-controls='{{ accordion_item_name }}-collapse'>
+                {{ name }}
+            </button>
+        </h2>
+        <div id='{{ accordion_item_name }}-collapse' class='accordion-collapse collapse' data-bs-parent='#{{ accordion_item_name }}'>
+            <div class='accordion-body'>
+                <table class='table table-sm table-hover'>
+                    <thead>
+                        <tr>
+                            <th class='col-sm-5' scope='col'>Value</th>
+                            <th class='col-sm-3' scope='col'>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for primitives in element_array %}
+                        <tr>
+                            <td class='text-wrap'>{{ primitives.Value }}</td>
+                            <td class='text-wrap'>{{ primitives.Unit }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+    {% for name, object_array in obobject.object_arrays.items %}
+    {% with accordion_item_name=accordion_name|add:'-'|add:name|lower %}
+    <div class='accordion-item'>
+        <h2 class='accordion-header'>
+            <button class='accordion-button collapsed' type='button' data-bs-toggle='collapse' data-bs-target='#{{ accordion_item_name }}-collapse' aria-expanded='false' aria-controls='{{ accordion_item_name }}-collapse'>
+                {{ name }}
+            </button>
+        </h2>
+        <div id='{{ accordion_item_name }}-collapse' class='accordion-collapse collapse' data-bs-parent='#{{ accordion_item_name }}'>
+            <div class='accordion-body'>
+                {% if object_array|length %}
+                {% with tablist_name=accordion_item_name|add:'-tablist' %}
+                <ul class='nav nav-tabs' id='{{ tablist_name }}' role='tablist'>
+                    {% for object_item in object_array %}
+                    {% with tab_index=forloop.counter|stringformat:'s' %}
+                    {% with tab=tablist_name|add:'-'|add:tab_index %}
+                    <li class='nav-item' role='presentation'>
+                        <button class='nav-link {% if forloop.first %}active{% endif %}' id='{{ tab }}' data-bs-toggle='tab' data-bs-target='#{{ tab }}-pane' type='button' role='tab' aria-controls='{{ tab }}-pane' aria-selected='{% if forloop.first %}true{% else %}false{% endif %}'>#{{ forloop.counter }}</button>
+                    </li>
+                    {% endwith %}
+                    {% endwith %}
+                    {% endfor %}
+                </ul>
+                <div class='tab-content' id='{{ tablist_name }}-content'>
+                    {% for object_item in object_array %}
+                    {% with tab_index=forloop.counter|stringformat:'s' %}
+                    {% with tab=tablist_name|add:'-'|add:tab_index %}
+                    <div class='tab-pane fade {% if forloop.first %}show active{% endif %}' id='{{ tab }}-pane' role='tabpanel' aria-labelledby='{{ tab }}' tabindex='0'>
+                        {% include 'server/obobject.html' with prefix=tab obobject=object_item %}
+                    </div>
+                    {% endwith %}
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+                {% endwith %}
+                {% else %}
+                    No {{ name }} have been added.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+</div>
+{% endwith %}
+{% endif %}

@@ -1,0 +1,21 @@
+# Python-generated files
+*.pdf
+**/__pycache__/
+**/*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+**/.ipynb_checkpoints
+**/.terraform
+
+# Virtual environments
+.venv
+
+# Other
+*.sqlite3
+*.output
+*.error
+*.cobaltlog
+weights
+notebooks/checkpoints

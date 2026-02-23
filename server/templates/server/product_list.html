@@ -1,0 +1,46 @@
+{% extends 'server/base.html' %}
+
+{% block header %}
+<div class='container'>
+    <h1>Products</h1>
+</div>
+{% endblock %}
+
+{% block main %}
+<div class='container'>
+{% include 'server/pagination.html' with page=page_products query_param_string=search_query justify_content='justify-content-end' %}
+<table class='table table-sm table-hover'>
+    <thead>
+        <tr>
+            <th class='col-sm-2' scope='col'>ProdType</th>
+            <th class='col-sm-3' scope='col'>ProdMfr</th>
+            <th class='col-sm-2' scope='col'>ProdName</th>
+            <th class='col-sm-4' scope='col'>ProdCode</th>
+            <th class='col-sm-1' scope='col'>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in page_products %}
+            <tr>
+                <td>{{ p.ProdType_Value }}</td>
+                <td class='text-wrap'>{{ p.ProdMfr_Value }}</td>
+                <td class='text-wrap'>{{ p.ProdName_Value }}</td>
+                <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
+                <td>
+                    <a href="{% url 'product:detail-prodid' p.ProdID_Value %}" target='_blank' class='btn btn-sm btn-secondary' type='button'>
+                        View Details
+                    </a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan='5'>
+                    <h6>No products matched your search.</h6>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% include 'server/pagination.html' with page=page_products query_param_string=search_query justify_content='justify-content-end' %}
+</div>
+{% endblock %}
