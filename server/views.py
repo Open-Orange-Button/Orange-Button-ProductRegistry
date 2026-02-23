@@ -13,7 +13,6 @@ from django.shortcuts import get_object_or_404, render, reverse
 
 import ob_taxonomy.models as ob_models
 import server.models as models
-import server.forms as forms
 
 
 GROUP_NAMES = ('elements', 'nested_objects', 'element_arrays', 'object_arrays')
