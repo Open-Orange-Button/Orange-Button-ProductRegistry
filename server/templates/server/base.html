@@ -30,7 +30,12 @@
                     </li>
                 </ul>
                 <form class='d-flex' method='GET' action="{% url 'webpage:product-list' %}">
-                    <input name='q' class='form-control me-2' type='search' placeholder='Search Products...' aria-label='Search'>
+                    <select name='SourceCountry' class='form-select me-1' aria-label='Select the source country of the products'>
+                        {% for value, label, selected in search_context.source_country_options %}
+                        <option {% if selected %}selected{% endif %} value='{{ value }}'>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input name='q' value='{{ search_context.search_query }}' class='form-control me-2' type='search' placeholder='Search Products...' aria-label='Search products'>
                     <button class='btn btn-outline-primary' type='submit'>Search</button>
                 </form>
             </div>

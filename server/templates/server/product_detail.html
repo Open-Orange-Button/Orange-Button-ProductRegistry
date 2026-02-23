@@ -24,16 +24,12 @@
 
 {% block main %}
 <div class='container mb-5'>
-<h2>Product Summary</h2>
+<h2 class='mt-3'>Product Summary</h2>
 {% include 'server/obobject.html' with prefix='summary' obobject=product|obobject_elements_subset:'ProdType,ProdMfr,ProdName,Description,ProdDatasheet,FileFolderURL,ProdCode,ProdID' %}
-
-<h3>Certifications</h3>
 {% include 'server/obobject.html' with prefix='summary-certifications' obobject=product|obobject_object_arrays_subset:'ProdCertifications' %}
-
-<h3>Warranties</h3>
 {% include 'server/obobject.html' with prefix='summary-warranties' obobject=product|obobject_object_arrays_subset:'Warranties' %}
 
-<h2>All Details</h2>
+<h2 class='mt-3'>All Details</h2>
 {% include 'server/obobject.html' with prefix='all-details' obobject=product %}
 </div>
 {% endblock %}

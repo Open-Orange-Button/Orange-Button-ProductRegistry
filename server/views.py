@@ -20,19 +20,33 @@ GROUP_NAMES = ('elements', 'nested_objects', 'element_arrays', 'object_arrays')
 CURRENTLY_IMPLEMENTED_PRODUCTS = ('prodbattery', 'prodcell', 'prodmodule')
 
 
-def model_to_ob_json(model, group=False):
+def model_to_ob_json(model, group=False, human_readable_enums=False):
     ob_json_grouped = {k: defaultdict(dict) for k in GROUP_NAMES}
     ob_model = ob_models.OBObject.objects.get(name=model._meta.object_name)
-    for element in ob_model.all_elements():
+    for element in ob_model.all_elements().order_by('name'):
         if element.item_type.units.exists():
-            ob_json_grouped['elements'][element.name]['Unit'] = getattr(model, f'{element.name}_Unit')
-        ob_json_grouped['elements'][element.name]['Value'] = getattr(model, f'{element.name}_Value')
-    for nested_object in ob_model.all_nested_objects():
+            unit = getattr(model, f'{element.name}_Unit')
+            if human_readable_enums and unit != '':
+                unit = getattr(models, f'{element.item_type.name}Unit')(unit).label
+            ob_json_grouped['elements'][element.name]['Unit'] = unit
+        value = getattr(model, f'{element.name}_Value')
+        if (
+            human_readable_enums and value != ''
+            and element.item_type.name != 'UUIDItemType'  # FIXME taxonomy bug: this item type defines enums, but it should not
+            and element.item_type.enums.exists()
+        ):
+            if element.item_type.name == 'ProdTypeItemType' and value == 'ProdCell':
+                # FIXME taxonomy bug: ProdCell is missing from the enums of ProdTypeItemType
+                value = 'Cell'
+            else:
+                value = getattr(models, f'{element.item_type.name}Enum')(value).label
+        ob_json_grouped['elements'][element.name]['Value'] = value
+    for nested_object in ob_model.all_nested_objects().order_by('name'):
         if getattr(model, nested_object.name) is not None:
-            ob_json_grouped['nested_objects'][nested_object.name] = model_to_ob_json(getattr(model, nested_object.name), group=group)
+            ob_json_grouped['nested_objects'][nested_object.name] = model_to_ob_json(getattr(model, nested_object.name), group=group, human_readable_enums=human_readable_enums)
         else:
             ob_json_grouped['nested_objects'][nested_object.name] = None
-    for element_array in ob_model.all_element_arrays():
+    for element_array in ob_model.all_element_arrays().order_by('name'):
         ob_json_grouped['element_arrays'][element_array.name] = []
         for v in getattr(model, element_array.name).all():
             item_json = {}
@@ -40,12 +54,12 @@ def model_to_ob_json(model, group=False):
                 item_json['Unit'] = getattr(v, 'Unit')
             item_json['Value'] = getattr(v, 'Value')
             ob_json_grouped['element_arrays'][element_array.name].append(item_json)
-    for object_array in ob_model.all_object_arrays():
+    for object_array in ob_model.all_object_arrays().order_by('name'):
         if object_array.name == 'SubstituteProducts':
             ob_json_grouped['object_arrays'][object_array.name] = []
         else:
             ob_json_grouped['object_arrays'][object_array.name] = [
-                model_to_ob_json(v, group=group)
+                model_to_ob_json(v, group=group, human_readable_enums=human_readable_enums)
                 for v in getattr(model, object_array.name).all()
             ]
     ob_json_grouped = {
@@ -122,11 +136,23 @@ def _obobjectsubset(group_name, obobject, key_csv):
 for group_name in GROUP_NAMES:
     django.template.defaulttags.register.filter(f'obobject_{group_name}_subset', partial(_obobjectsubset, group_name))
 
-# @django.template.defaulttags.register.filter
-# def obobjectelementsubset(obobject, key_csv):
-#     return _obobjectsubset(obobject, 'elements', key_csv)
-#
-#
+
+def get_search_context(request):
+    current_search_query = request.GET.get('q', '')
+    current_source_country = request.GET.get('SourceCountry', '')
+    US = models.CountryEnum.US
+    source_country_options = [
+        ('', 'Any source country', '' == current_source_country),
+        (US.value, US.label, US.value == current_source_country),
+        *(
+            (e.value, e.label, e.value == current_source_country)
+            for e in sorted(models.CountryEnum, key=lambda e: e.label)
+            if e is not US
+        )
+    ]
+    return dict(search_query=current_search_query, source_country_options=source_country_options)
+
+
 def product_detail_by_ProdID(request, ProdID_Value):
     # subclass_reverse_names = map(str.lower, ob_models.OBObject.filter(comprises__name='Product').values_list('name', flat=True))
     subclass_reverse_names = CURRENTLY_IMPLEMENTED_PRODUCTS
@@ -135,17 +161,18 @@ def product_detail_by_ProdID(request, ProdID_Value):
         ProdID_Value=ProdID_Value,
     )
     product = determine_product_subclass(product, subclass_reverse_names=subclass_reverse_names)
-    name = type(product).__name__
-    product_serialized = model_to_ob_json(product, group=True)
+    product_serialized = model_to_ob_json(product, group=True, human_readable_enums=True)
+    product_serialized['element_arrays']['ProdInstructions'] = [
+        dict(Value='instructions1'),
+        dict(Value='instructions2', Unit='instructions2Unit'),
+    ]
     print(product_serialized)
-    ob_model = ob_models.OBObject.objects.get(name=name)
-    # form_dict = get_form_dict(ob_model, product_serialized)
     return render(
         request,
         'server/product_detail.html',
         context=dict(
+            search_context=get_search_context(request),
             product=product_serialized,
-            # form_dict=form_dict
         )
     )
 
@@ -170,8 +197,14 @@ def product_json(request, ProdID_Value):
 
 def product_list(request, **kwargs):
     search_query = request.GET.get('q', '')
+    search_source_country = request.GET.get('SourceCountry', '')
+    products = models.Product.objects.all()
+    if search_source_country != '':
+        products = products.filter(
+            SourceCountries__CountryOfManufacture_Value__icontains=search_source_country,
+        )
     products = (
-        models.Product.objects.values(
+        products.values(
             'ProdType_Value',
             'ProdMfr_Value',
             'ProdName_Value',
@@ -185,13 +218,17 @@ def product_list(request, **kwargs):
             | Q(ProdName_Value__icontains=search_query)
             | Q(ProdType_Value__icontains=search_query)
         )
-        .order_by('ProdCode_Value')
+        .order_by(
+            'ProdType_Value',
+            'ProdCode_Value',
+        )
     )
     search_query = f'?q={search_query}&'
     return render(
         request,
         'server/product_list.html',
         context=dict(
+            search_context=get_search_context(request),
             search_query=search_query,
             page_products=paginator.Paginator(products, 20).get_page(request.GET.get('page'))
         )
