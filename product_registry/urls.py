@@ -21,6 +21,7 @@ from django.http import HttpResponse
 
 
 urlpatterns = [
+    path('', RedirectView.as_view(pattern_name='product:list', permanent=True), name='index'),
     path('product/', include('server.urls')),
     path('health/', lambda request: HttpResponse('OK'), name='health'),
     path('admin/', admin.site.urls),
