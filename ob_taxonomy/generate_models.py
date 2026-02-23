@@ -30,6 +30,17 @@ def generate_django_enum_field(django_enum_name: str):
     )
 
 
+def format_enum_attr(name):
+    try:
+        int(name)
+        return f'i{name}'
+    except ValueError:
+        pass
+    if name in keyword.kwlist:
+        return f'{name}_'
+    return name
+
+
 def generate_django_enum_class(django_enum_name: str, enums: type[ob_models.OBItemTypeEnum | ob_models.OBItemTypeUnit]):
     return ast.ClassDef(
         name=django_enum_name,
@@ -37,7 +48,7 @@ def generate_django_enum_class(django_enum_name: str, enums: type[ob_models.OBIt
         keywords=[],
         body=[
             ast.Assign(
-                targets=[ast.Name(id=e.name if e.name not in keyword.kwlist else f'{e.name}_', ctx=ast.Store())],
+                targets=[ast.Name(id=format_enum_attr(e.name), ctx=ast.Store())],
                 value=ast.Tuple(elts=[
                     ast.Constant(value=e.name),
                     ast.Call(
