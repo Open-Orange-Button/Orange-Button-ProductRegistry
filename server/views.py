@@ -178,7 +178,7 @@ def product_detail_by_ProdID(request, ProdID_Value):
 
 def product_detail_by_ProdCode(request, ProdCode_Value):
     product = get_object_or_404(models.Product, ProdCode_Value=ProdCode_Value)
-    return product_detail_by_ProdID(request, product=product)
+    return product_detail_by_ProdID(request, ProdID_Value=product.ProdID_Value)
 
 
 def product_json(request, ProdID_Value):
