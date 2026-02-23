@@ -161,11 +161,6 @@ def product_detail_by_ProdID(request, ProdID_Value):
     )
     product = determine_product_subclass(product, subclass_reverse_names=subclass_reverse_names)
     product_serialized = model_to_ob_json(product, group=True, human_readable_enums=True)
-    product_serialized['element_arrays']['ProdInstructions'] = [
-        dict(Value='instructions1'),
-        dict(Value='instructions2', Unit='instructions2Unit'),
-    ]
-    print(product_serialized)
     return render(
         request,
         'server/product_detail.html',
