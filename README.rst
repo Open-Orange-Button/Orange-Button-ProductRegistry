@@ -191,7 +191,7 @@ To upload data into the database, one successful technique is as follows:
 
 #. Build a local SQLite database containing all the data to be uploaded to the remote production MySQL database.
 
-#. Use ``DuckDB <https://duckdb.org/>`_ to connect to both the local SQLite database than the remote database.
+#. Use `DuckDB <https://duckdb.org/>`_ to connect to both the local SQLite database than the remote database.
 
    .. code:: sql
 
