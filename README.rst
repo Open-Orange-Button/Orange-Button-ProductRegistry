@@ -225,7 +225,11 @@ To upload data into the database, one successful technique is as follows:
       commit;
 
 #. Once all the data is uploaded, destroy the "Bastion" EC2 instance to save costs.
-   In ``terraform/bastion.tf``, comment out everything, and in ``terraform/security_groups.tf``, remove ``aws_security_group.bastion_sg.id`` from the ``security_groups`` of ``ingress`` of the ``aws_security_group`` anmed ``rds_sg``.
+   In ``terraform/bastion.tf``, comment out everything except the ``aws_security_group`` named ``bastion_sg``.
+   In ``terraform/security_groups.tf``, remove ``aws_security_group.bastion_sg.id`` from the ``security_groups`` of ``ingress`` of the ``aws_security_group`` named ``rds_sg``.
+   Run ``terraform apply`` to remove the security group from the database and destroy the "Bastion" EC2 instance.
+   Next, in ``terraform/bastion.tf``, comment out the ``aws_security_group`` named ``bastion_sg``.
+   Rerun ``terraform apply`` to destroy the Bastion's security group.
 
 Serving the website from the domain
 -----------------------------------
