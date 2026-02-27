@@ -34,7 +34,7 @@ resource "aws_db_instance" "mysql" {
 
   db_name  = var.service-name-alphanumeric
   username = "admin"
-  password = "your_secure_password" # In production, use a Secret Manager variable
+  password = var.db_password
 
   parameter_group_name = aws_db_parameter_group.mysql_collation_pg.name
 
