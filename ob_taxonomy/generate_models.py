@@ -67,10 +67,12 @@ COMMON_KWARGS = dict(blank=True, null=True)
 FLOAT_FIELD_KWARGS = COMMON_KWARGS
 CHAR_FIELD_KWARGS = dict(blank=True)
 SCHEMA_NAME_FIELD_CONF = dict(
+    AttestationURL=dict(func=partial(models.URLField, **CHAR_FIELD_KWARGS)),
     FileFolderURL=dict(func=partial(models.URLField, **CHAR_FIELD_KWARGS)),
     HomePhone=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=15)),
     MobilePhone=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=15)),
     ProdCode=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, null=True, max_length=50, unique=True, editable=False, db_index=True)),
+    ProdDatasheetURL=dict(func=partial(models.URLField, **CHAR_FIELD_KWARGS)),
     TaxID=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=20)),
     WorkPhone=dict(func=partial(models.CharField, **CHAR_FIELD_KWARGS, max_length=15)),
     URL=dict(func=partial(models.URLField, **CHAR_FIELD_KWARGS)),
