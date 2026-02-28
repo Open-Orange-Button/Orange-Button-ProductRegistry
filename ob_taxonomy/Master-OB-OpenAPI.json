@@ -52,8 +52,8 @@
           "ProdType": {
             "$ref": "#/components/schemas/ProdType"
           },
-          "ProdDatasheet": {
-            "$ref": "#/components/schemas/ProdDatasheet"
+          "ProdDatasheetURL": {
+            "$ref": "#/components/schemas/ProdDatasheetURL"
           },
           "ProdInstructions": {
             "$ref": "#/components/schemas/ProdInstructions"
@@ -2916,23 +2916,6 @@
         "items": {
           "$ref": "#/components/schemas/EnergyConsumption"
         }
-      },
-      "ProdDatasheet": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/TaxonomyElementString"
-          },
-          {
-            "type": "object",
-            "description": "The datasheet for the product",
-            "x-ob-item-type": "StringItemType",
-            "x-ob-usage-tips": "This is for a URL leading to the Datasheet for a product.",
-            "x-ob-sample-value": {
-              "Value": "http://www.lg-solar.com/downloads/spec-sheet/DS_NeON2_60cells.pdf"
-            },
-            "x-ob-item-type-group": ""
-          }
-        ]
       },
       "ProdInstruction": {
         "allOf": [
@@ -15729,7 +15712,7 @@
           {
             "type": "object",
             "description": "The ISO country code where this is manufactured",
-            "x-ob-item-type": "StringItemType",
+            "x-ob-item-type": "ISOCountryItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
@@ -15773,8 +15756,8 @@
           "CountryOfOwnershipIsNotPFE": {
             "$ref": "#/components/schemas/CountryOfOwnershipIsNotPFE"
           },
-          "CountryOfOwnershipforPFE": {
-            "$ref": "#/components/schemas/CountryOfOwnershipforPFE"
+          "CountryOfOwnershipForPFE": {
+            "$ref": "#/components/schemas/CountryOfOwnershipForPFE"
           }
         }
       },
@@ -15818,7 +15801,7 @@
           "$ref": "#/components/schemas/SourceCountry"
         }
       },
-      "CountryOfOwnershipforPFE": {
+      "CountryOfOwnershipForPFE": {
         "allOf": [
           {
             "$ref": "#/components/schemas/TaxonomyElementString"
@@ -15826,7 +15809,7 @@
           {
             "type": "object",
             "description": "The ISO country code of the primary owner of the company that produced the product for prohibited foreign entity determination",
-            "x-ob-item-type": "StringItemType",
+            "x-ob-item-type": "ISOCountryItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "",
             "x-ob-sample-value": {
@@ -16024,6 +16007,38 @@
             "x-ob-item-type": "StringItemType",
             "x-ob-item-type-group": "",
             "x-ob-usage-tips": "If contains HTML or rich text, user's application must validate and render it.",
+            "x-ob-sample-value": {}
+          }
+        ]
+      },
+      "ProdDatasheetURL": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementString"
+          },
+          {
+            "type": "object",
+            "description": "The datasheet for the product",
+            "x-ob-item-type": "StringItemType",
+            "x-ob-usage-tips": "This is for a URL leading to the Datasheet for a product.",
+            "x-ob-sample-value": {
+              "Value": "http://www.lg-solar.com/downloads/spec-sheet/DS_NeON2_60cells.pdf"
+            },
+            "x-ob-item-type-group": ""
+          }
+        ]
+      },
+      "AttestationURL": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TaxonomyElementString"
+          },
+          {
+            "type": "object",
+            "description": "A URL to the attestation of a product's assigned cost percentage for country of manufacture",
+            "x-ob-item-type": "StringItemType",
+            "x-ob-item-type-group": "",
+            "x-ob-usage-tips": "",
             "x-ob-sample-value": {}
           }
         ]
@@ -23048,7 +23063,7 @@
         }
       }
     },
-    "Country": {
+    "ISOCountryItemType": {
       "description": "ISO country enumeration codes from wiki",
       "enums": {
         "AD": {
