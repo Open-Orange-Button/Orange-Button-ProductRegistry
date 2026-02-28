@@ -2,6 +2,25 @@ import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+@models.Field.register_lookup
+class IContains(models.lookups.IContains):
+    """
+    Custom implementation of the ``icontains`` QuerySet lookup filter.
+    """
+
+    def as_sql(self, compiler, connection):
+        """
+        Return MySQL that matches lowercased values with a lowercased
+        pattern string.
+
+        The superclass claims to use ``ILIKE`` but keyword this does not exist
+        in MySQL.
+        """
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = (*lhs_params, *map(str.lower, rhs_params))
+        return f'LOWER({lhs}) LIKE {rhs}', params
+
 class ApplicationProtocolTypeItemTypeEnum(models.TextChoices):
     DNP3 = ('DNP3', _('Distributed Network Protocol 3 '))
     Modbus = ('Modbus', _('SunSpec Modbus'))

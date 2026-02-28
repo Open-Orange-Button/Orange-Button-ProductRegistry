@@ -189,7 +189,7 @@ def product_json(request, ProdID_Value):
     return response
 
 
-def product_list(request, **kwargs):
+def product_list(request):
     search_query = request.GET.get('q', '')
     search_source_country = request.GET.get('SourceCountry', '')
     products = models.Product.objects.all()
@@ -221,6 +221,42 @@ def product_list(request, **kwargs):
     return render(
         request,
         'server/product_list.html',
+        context=dict(
+            search_context=get_search_context(request),
+            search_query=search_query,
+            page_products=paginator.Paginator(products, 20).get_page(request.GET.get('page'))
+        )
+    )
+
+def product_list_us_domestic(request):
+    search_query = request.GET.get('q', '')
+    products = models.Product.objects.filter(
+        SourceCountries__CountryOfManufacture_Value__icontains=models.CountryEnum.US,
+    )
+    products = (
+        products.values(
+            'ProdType_Value',
+            'ProdMfr_Value',
+            'ProdName_Value',
+            'ProdCode_Value',
+            'ProdID_Value'
+        )
+        .filter(
+            Q(Description_Value__icontains=search_query)
+            | Q(ProdCode_Value__icontains=search_query)
+            | Q(ProdMfr_Value__icontains=search_query)
+            | Q(ProdName_Value__icontains=search_query)
+            | Q(ProdType_Value__icontains=search_query)
+        )
+        .order_by(
+            'ProdType_Value',
+            'ProdCode_Value',
+        )
+    )
+    search_query = f'?q={search_query}&'
+    return render(
+        request,
+        'server/product_list_us_domestic.html',
         context=dict(
             search_context=get_search_context(request),
             search_query=search_query,

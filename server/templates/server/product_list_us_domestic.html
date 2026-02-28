@@ -1,0 +1,40 @@
+{% extends 'server/product_list.html' %}
+
+{% block navbar-product-list-active %}{% endblock %}
+{% block navbar-product-list-us-domestic-active %}active{% endblock %}
+
+{% block header %}
+<div class='container'>
+    <div class='row mt-3'>
+        <div class='col-6'>
+            <h1>United States Domestic Content</h1>
+        </div>
+        <div class='col-3'>
+        </div>
+        <div class='col-3 justify-content-end'>
+            <form class='d-flex' method='GET' action="{% url 'product:list-us-domestic' %}">
+                <input name='q' value='{{ search_context.search_query }}' class='form-control me-2' type='search' placeholder='Search Products...' aria-label='Search products'>
+                <button class='btn btn-outline-primary' type='submit'>Search</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block column_headers %} {# col-sm should sum to 11, not 12 #}
+<th class='col-sm-2' scope='col'>ProdType</th>
+<th class='col-sm-2' scope='col'>ProdMfr</th>
+<th class='col-sm-3' scope='col'>ProdCode</th>
+<th class='col-sm-2' scope='col'>Country Of Manufacture</th>
+<th class='col-sm-1' scope='col'>Assigned Cost Percentage</th>
+<th class='col-sm-1' scope='col'>Prod Datasheet URL</th>
+{% endblock %}
+
+{% block column_values %}
+<td>{{ p.ProdType_Value }}</td>
+<td class='text-wrap'>{{ p.ProdMfr_Value }}</td>
+<td class='text-wrap'>{{ p.ProdCode_Value }}</td>
+<td class='text-wrap'>{{ p.SourceCountries.0.CountryOfManufacture_Value }}</td>
+<td class='text-wrap'>{{ p.SourceCountries.0.AssignedCostPercentage_Value }}</td>
+<td class='text-wrap'><a href='{{ p.ProdDatasheet_Value }}'>Datasheet</a></td>
+{% endblock %}

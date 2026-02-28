@@ -1,8 +1,25 @@
 {% extends 'server/base.html' %}
 
+{% block navbar-product-list-active %}active{% endblock %}
+
 {% block header %}
 <div class='container'>
-    <h1>Products</h1>
+    <div class='row mt-3'>
+        <div class='col-6'>
+            <h1>Products</h1>
+        </div>
+        <div class='col-6'>
+            <form class='d-flex' method='GET' action="{% url 'product:list' %}">
+                <select name='SourceCountry' class='form-select me-1' aria-label='Select the source country of the products'>
+                    {% for value, label, selected in search_context.source_country_options %}
+                    <option {% if selected %}selected{% endif %} value='{{ value }}'>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <input name='q' value='{{ search_context.search_query }}' class='form-control me-2' type='search' placeholder='Search Products...' aria-label='Search products'>
+                <button class='btn btn-outline-primary' type='submit'>Search</button>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -12,20 +29,24 @@
 <table class='table table-sm table-hover'>
     <thead>
         <tr>
+            {% block column_headers %}
             <th class='col-sm-2' scope='col'>ProdType</th>
             <th class='col-sm-3' scope='col'>ProdMfr</th>
             <th class='col-sm-2' scope='col'>ProdName</th>
             <th class='col-sm-4' scope='col'>ProdCode</th>
+            {% endblock %}
             <th class='col-sm-1' scope='col'>Details</th>
         </tr>
     </thead>
     <tbody>
         {% for p in page_products %}
             <tr>
+                {% block column_values %}
                 <td>{{ p.ProdType_Value }}</td>
                 <td class='text-wrap'>{{ p.ProdMfr_Value }}</td>
                 <td class='text-wrap'>{{ p.ProdName_Value }}</td>
                 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
+                {% endblock %}
                 <td>
                     <a href="{% url 'product:detail-prodid' p.ProdID_Value %}" target='_blank' class='btn btn-sm btn-secondary' type='button'>
                         View Details
