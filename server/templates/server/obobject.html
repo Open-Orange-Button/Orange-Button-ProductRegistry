@@ -11,7 +11,7 @@
         {% for name, primitives in obobject.elements.items %}
         <tr>
             <th scope='row'>{{ name }}</th>
-            <td class='text-wrap'>{{ primitives.Value }}</td>
+            <td class='text-wrap'>{{ primitives.Value|default_if_none:'' }}</td>
             <td class='text-wrap'>{{ primitives.Unit }}</td>
         </tr>
         {% endfor %}
