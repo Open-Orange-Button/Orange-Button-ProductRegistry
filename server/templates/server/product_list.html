@@ -31,9 +31,9 @@
         <tr>
             {% block column_headers %}
             <th class='col-sm-2' scope='col'>ProdType</th>
-            <th class='col-sm-3' scope='col'>ProdMfr</th>
-            <th class='col-sm-2' scope='col'>ProdName</th>
+            <th class='col-sm-4' scope='col'>ProdMfr</th>
             <th class='col-sm-4' scope='col'>ProdCode</th>
+            <th class='col-sm-1' scope='col'>Prod Datasheet URL</th>
             {% endblock %}
             <th class='col-sm-1' scope='col'>Details</th>
         </tr>
@@ -44,8 +44,12 @@
                 {% block column_values %}
                 <td>{{ p.ProdType_Value }}</td>
                 <td class='text-wrap'>{{ p.ProdMfr_Value }}</td>
-                <td class='text-wrap'>{{ p.ProdName_Value }}</td>
                 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
+                <td class='text-wrap'>
+                    {% if p.ProdDatasheet_Value %}
+                    <a href='{{ p.ProdDatasheet_Value }}'>Datasheet</a>
+                    {% endif %}
+                </td>
                 {% endblock %}
                 <td>
                     <a href="{% url 'product:detail-prodid' p.ProdID_Value %}" target='_blank' class='btn btn-sm btn-secondary' type='button'>
