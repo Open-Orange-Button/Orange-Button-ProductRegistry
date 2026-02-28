@@ -128,7 +128,7 @@ Pushing a Docker image to `Amazon Elastic Container Registry (ECR) <https://aws.
 
    .. code:: bash
 
-      docker build -t django-ecs  # django-ecs is an arbitrary name for the image
+      docker build -t django-ecs .  # django-ecs is an arbitrary name for the image
 
 #. Debugging the image. With Django's HTTPS redirection turned off, try
 
