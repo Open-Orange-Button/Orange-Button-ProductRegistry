@@ -36,5 +36,9 @@
 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
 <td class='text-wrap'>{{ p.SourceCountries.0.CountryOfManufacture_Value }}</td>
 <td class='text-wrap'>{{ p.SourceCountries.0.AssignedCostPercentage_Value }}</td>
-<td class='text-wrap'><a href='{{ p.ProdDatasheet_Value }}'>Datasheet</a></td>
+<td class='text-wrap'>
+    {% if p.ProdDatasheet_Value %}
+    <a href='{{ p.ProdDatasheet_Value }}'>Datasheet</a>
+    {% endif %}
+</td>
 {% endblock %}
