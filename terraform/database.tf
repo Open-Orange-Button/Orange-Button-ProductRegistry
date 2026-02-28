@@ -41,8 +41,12 @@ resource "aws_db_instance" "mysql" {
   db_subnet_group_name   = aws_db_subnet_group.mysql.name
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
 
-  # Ensure the DB is not accessible from the public internet
-  publicly_accessible = false
-  skip_final_snapshot = true # Set to false for production to prevent data loss
+  publicly_accessible = false # Ensure the DB is not accessible from the public internet
+  skip_final_snapshot = false # Set to false for production to prevent data loss
   multi_az            = false # Set to true for production high availability
+
+  # Database backups
+  backup_retention_period = 1 # Day (2026-02: this is the maximum for free RDS backup storage)
+  copy_tags_to_snapshot = true
+  # backup_window = "04:30-05:00" # UTC
 }
