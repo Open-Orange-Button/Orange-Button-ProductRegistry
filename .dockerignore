@@ -20,3 +20,5 @@ terraform
 *.output
 *.error
 *.cobaltlog
+*.csv
+*.xlsx

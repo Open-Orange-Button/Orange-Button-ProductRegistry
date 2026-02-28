@@ -19,3 +19,5 @@ wheels/
 *.cobaltlog
 weights
 notebooks/checkpoints
+*.csv
+*.xlsx
