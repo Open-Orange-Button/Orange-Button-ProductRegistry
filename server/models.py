@@ -104,7 +104,7 @@ class ContactTypeItemTypeEnum(models.TextChoices):
     Security = ('Security', _('Security'))
     Technician = ('Technician', _('Technician'))
 
-class CountryEnum(models.TextChoices):
+class ISOCountryItemTypeEnum(models.TextChoices):
     AD = ('AD', _('Andorra'))
     AE = ('AE', _('United Arab Emirates'))
     AF = ('AF', _('Afghanistan'))
@@ -644,7 +644,7 @@ class Product(models.Model):
     FileFolderURL_Value = models.URLField(blank=True)
     ManufacturerUPC_Value = models.CharField(blank=True, max_length=500)
     ProdCode_Value = models.CharField(blank=True, null=True, max_length=50, unique=True, editable=False, db_index=True)
-    ProdDatasheet_Value = models.CharField(blank=True, max_length=500)
+    ProdDatasheetURL_Value = models.URLField(blank=True)
     ProdID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
     ProdMfr_Value = models.CharField(blank=True, max_length=500)
     ProdName_Value = models.CharField(blank=True, max_length=500)
@@ -948,10 +948,11 @@ class Scope(models.Model):
 class SourceCountry(models.Model):
     AssignedCostPercentage_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit, blank=True)
     AssignedCostPercentage_Value = models.FloatField(blank=True, null=True)
-    CountryOfManufacture_Value = models.CharField(blank=True, max_length=500)
+    AttestationURL_Value = models.URLField(blank=True)
+    CountryOfManufacture_Value = models.CharField(max_length=max(map(len, ISOCountryItemTypeEnum)), choices=ISOCountryItemTypeEnum, blank=True)
     CountryOfManufactureIsNotPFE_Value = models.BooleanField(blank=True, null=True)
+    CountryOfOwnershipForPFE_Value = models.CharField(max_length=max(map(len, ISOCountryItemTypeEnum)), choices=ISOCountryItemTypeEnum, blank=True)
     CountryOfOwnershipIsNotPFE_Value = models.BooleanField(blank=True, null=True)
-    CountryOfOwnershipforPFE_Value = models.CharField(blank=True, max_length=500)
 
 class TestLab(Entity):
     TestLabID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
