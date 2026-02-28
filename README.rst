@@ -165,6 +165,16 @@ Pushing a Docker image to `Amazon Elastic Container Registry (ECR) <https://aws.
 
 #. Once an ECS task instance is running, it will automatically create the tables in the database.
 
+#. If you are building an image to replace the current one in production, AWS ECS will not automatically use the newly built image if it has the same tag (e.g., "latest") as the old image.
+   To get AWS ECS to use the new image, navigate to the ECS service following breadcrumbs like
+
+   .. code::
+
+      Amazon Elastic Container Service > Clusters > ob-product-registry-2026-02-cluster > Services > ob-product-registry-2026-02-service > Health
+
+   In the top right, there should be a button labeled "Update service".
+   Click the dropdown next to it and select "Force new deployment".
+
 Connecting and uploading data to the database
 ---------------------------------------------
 
