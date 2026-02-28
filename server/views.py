@@ -139,13 +139,13 @@ for group_name in GROUP_NAMES:
 def get_search_context(request):
     current_search_query = request.GET.get('q', '')
     current_source_country = request.GET.get('SourceCountry', '')
-    US = models.CountryEnum.US
+    US = models.ISOCountryItemTypeEnum.US
     source_country_options = [
         ('', 'Any source country', '' == current_source_country),
         (US.value, US.label, US.value == current_source_country),
         *(
             (e.value, e.label, e.value == current_source_country)
-            for e in sorted(models.CountryEnum, key=lambda e: e.label)
+            for e in sorted(models.ISOCountryItemTypeEnum, key=lambda e: e.label)
             if e is not US
         )
     ]
@@ -231,7 +231,7 @@ def product_list(request):
 def product_list_us_domestic(request):
     search_query = request.GET.get('q', '')
     products = models.Product.objects.filter(
-        SourceCountries__CountryOfManufacture_Value__icontains=models.CountryEnum.US,
+        SourceCountries__CountryOfManufacture_Value__icontains=models.ISOCountryItemTypeEnum.US,
     )
     products = (
         products.values(
