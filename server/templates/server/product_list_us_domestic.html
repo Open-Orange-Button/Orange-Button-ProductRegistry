@@ -34,8 +34,9 @@
 <td>{{ p.ProdType_Value }}</td>
 <td class='text-wrap'>{{ p.ProdMfr_Value }}</td>
 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
-<td class='text-wrap'>{{ p.SourceCountries.0.CountryOfManufacture_Value }}</td>
-<td class='text-wrap'>{{ p.SourceCountries.0.AssignedCostPercentage_Value }}</td>
+{# using the first SourceCountry may be incorrect later #}
+<td class='text-wrap'>{{ p.SourceCountries.first.get_CountryOfManufacture_Value_display }}</td>
+<td class='text-wrap'>{{ p.SourceCountries.first.AssignedCostPercentage_Value|default_if_none:'' }}</td>
 <td class='text-wrap'>
     {% if p.ProdDatasheetURL_Value %}
     <a href='{{ p.ProdDatasheetURL_Value }}'>Datasheet</a>

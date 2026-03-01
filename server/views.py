@@ -191,20 +191,14 @@ def product_list_us_domestic(request):
         SourceCountries__CountryOfManufacture_Value__icontains=models.ISOCountryItemTypeEnum.US,
     )
     products = (
-        products.values(
-            'ProdType_Value',
-            'ProdMfr_Value',
-            'ProdName_Value',
-            'ProdCode_Value',
-            'ProdID_Value'
-        )
-        .filter(
+        products.filter(
             Q(Description_Value__icontains=search_query)
             | Q(ProdCode_Value__icontains=search_query)
             | Q(ProdMfr_Value__icontains=search_query)
             | Q(ProdName_Value__icontains=search_query)
             | Q(ProdType_Value__icontains=search_query)
         )
+        .prefetch_related('SourceCountries')
         .order_by(
             'ProdType_Value',
             'ProdCode_Value',
