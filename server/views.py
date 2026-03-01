@@ -155,14 +155,7 @@ def product_list(request):
     else:
         search_query = f'?q={search_query_param}&'
     products = (
-        products.values(
-            'ProdType_Value',
-            'ProdMfr_Value',
-            'ProdName_Value',
-            'ProdCode_Value',
-            'ProdID_Value'
-        )
-        .filter(
+        products.filter(
             Q(Description_Value__icontains=search_query_param)
             | Q(ProdCode_Value__icontains=search_query_param)
             | Q(ProdMfr_Value__icontains=search_query_param)
@@ -174,7 +167,6 @@ def product_list(request):
             'ProdCode_Value',
         )
     )
-    products = list(products) * 100
     return render(
         request,
         'server/product_list.html',
