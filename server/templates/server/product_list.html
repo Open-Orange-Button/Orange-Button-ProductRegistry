@@ -47,7 +47,7 @@
                 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
                 <td class='text-wrap'>
                     {% if p.ProdDatasheetURL_Value %}
-                    <a href='{{ p.ProdDatasheetURL_Value }}'>Datasheet</a>
+                    <a href='{{ p.ProdDatasheetURL_Value }}' target='_blank' rel='noopener noreferrer'>Datasheet</a>
                     {% endif %}
                 </td>
                 {% endblock %}

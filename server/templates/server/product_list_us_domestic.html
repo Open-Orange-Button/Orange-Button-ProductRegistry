@@ -39,7 +39,7 @@
 <td class='text-wrap'>{{ p.SourceCountries.first.AssignedCostPercentage_Value|default_if_none:'' }}</td>
 <td class='text-wrap'>
     {% if p.ProdDatasheetURL_Value %}
-    <a href='{{ p.ProdDatasheetURL_Value }}'>Datasheet</a>
+    <a href='{{ p.ProdDatasheetURL_Value }}' target='_blank' rel='noopener noreferrer'>Datasheet</a>
     {% endif %}
 </td>
 {% endblock %}
