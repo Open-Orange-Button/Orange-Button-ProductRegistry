@@ -69,52 +69,6 @@ def model_to_ob_json(model, group=False, human_readable_enums=False):
     return dict(itertools.chain.from_iterable((group.items() for group in ob_json_grouped.values())))
 
 
-# def get_form_dict(ob_model, d, parent_name=''):
-#     name = ob_model.name
-#     form_dict = dict(
-#         name=name,
-#         form=None,
-#         object_form_dicts=[],
-#         array_form_dicts=[]
-#     )
-#     form_initial = {}
-#     form_prefix = name.lower() if parent_name == '' else f'{parent_name}-{name.lower()}'
-#     for element in ob_model.all_elements():
-#         match element.taxonomy_element.name:
-#             case 'TaxonomyElementString':
-#                 default = dict(Value='')
-#             case _:
-#                 default = dict(Value=None)
-#                 if element.item_type.units.exists():
-#                     default['Unit'] = ''
-#         form_initial[element.name] = d.get(element.name, default)
-#     for nested_object in ob_model.all_nested_objects():
-#         if d[nested_object.name] is not None:
-#             form_dict['object_form_dicts'].append(get_form_dict(nested_object, d[nested_object.name], parent_name=form_prefix))
-#     for element_array in ob_model.all_element_arrays():
-#             prefix_plural = f'{form_prefix}-{element_array.name.lower()}'
-#             form_dict['array_form_dicts'].append(dict(
-#                 plural=element_array.name,
-#                 prefix_plural=prefix_plural,
-#                 object_form_dicts=[
-#                     get_form_dict(element_array.items, o, parent_name=f'{prefix_plural}-{i}')
-#                     for i, o in enumerate(d[element_array.name])
-#                 ]
-#             ))
-#     for object_array in ob_model.all_object_arrays():
-#         prefix_plural = f'{form_prefix}-{object_array.name.lower()}'
-#         form_dict['array_form_dicts'].append(dict(
-#             plural=object_array.name,
-#             prefix_plural=prefix_plural,
-#             object_form_dicts=[
-#                 get_form_dict(object_array.items, o, parent_name=f'{prefix_plural}-{i}')
-#                 for i, o in enumerate(d[object_array.name])
-#             ]
-#         ))
-#     form_dict['form'] = getattr(forms, name)(initial=form_initial, prefix=form_prefix)
-#     return form_dict
-
-
 def determine_product_subclass(product, subclass_reverse_names=None):
     if subclass_reverse_names is None:
         # subclass_reverse_names = map(str.lower, ob_models.OBObject.filter(comprises__name='Product').values_list('name', flat=True))
@@ -190,13 +144,16 @@ def product_json(request, ProdID_Value):
 
 
 def product_list(request):
-    search_query = request.GET.get('q', '')
+    search_query_param = request.GET.get('q', '')
     search_source_country = request.GET.get('SourceCountry', '')
     products = models.Product.objects.all()
     if search_source_country != '':
         products = products.filter(
             SourceCountries__CountryOfManufacture_Value__icontains=search_source_country,
         )
+        search_query = f'?SourceCountry={search_source_country}&q={search_query_param}&'
+    else:
+        search_query = f'?q={search_query_param}&'
     products = (
         products.values(
             'ProdType_Value',
@@ -206,18 +163,18 @@ def product_list(request):
             'ProdID_Value'
         )
         .filter(
-            Q(Description_Value__icontains=search_query)
-            | Q(ProdCode_Value__icontains=search_query)
-            | Q(ProdMfr_Value__icontains=search_query)
-            | Q(ProdName_Value__icontains=search_query)
-            | Q(ProdType_Value__icontains=search_query)
+            Q(Description_Value__icontains=search_query_param)
+            | Q(ProdCode_Value__icontains=search_query_param)
+            | Q(ProdMfr_Value__icontains=search_query_param)
+            | Q(ProdName_Value__icontains=search_query_param)
+            | Q(ProdType_Value__icontains=search_query_param)
         )
         .order_by(
             'ProdType_Value',
             'ProdCode_Value',
         )
     )
-    search_query = f'?q={search_query}&'
+    products = list(products) * 100
     return render(
         request,
         'server/product_list.html',
