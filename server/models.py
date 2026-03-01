@@ -18,8 +18,14 @@ class IContains(models.lookups.IContains):
         """
         lhs, lhs_params = self.process_lhs(compiler, connection)
         rhs, rhs_params = self.process_rhs(compiler, connection)
-        params = (*lhs_params, *map(str.lower, rhs_params))
-        return f'LOWER({lhs}) LIKE {rhs}', params
+        rhs_escaped_params = []
+        for p in rhs_params:
+            if isinstance(p, str):
+                p = p.replace('!', '!!').replace('\%', '!%').replace('\_', '!_')
+            rhs_escaped_params.append(p)
+        rhs_params = rhs_escaped_params
+        params = (*lhs_params, *rhs_params)
+        return f"LOWER({lhs}) LIKE LOWER({rhs}) ESCAPE '!'", params
 
 class ApplicationProtocolTypeItemTypeEnum(models.TextChoices):
     DNP3 = ('DNP3', _('Distributed Network Protocol 3 '))
