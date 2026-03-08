@@ -25,8 +25,8 @@
 <th class='col-sm-2' scope='col'>ProdType</th>
 <th class='col-sm-2' scope='col'>ProdMfr</th>
 <th class='col-sm-3' scope='col'>ProdCode</th>
-<th class='col-sm-2' scope='col'>Country Of Manufacture</th>
 <th class='col-sm-1' scope='col'>Assigned Cost Percentage</th>
+<th class='col-sm-2' scope='col'>Attestation URL</th>
 <th class='col-sm-1' scope='col'>Prod Datasheet URL</th>
 {% endblock %}
 
@@ -35,8 +35,8 @@
 <td class='text-wrap'>{{ p.ProdMfr_Value }}</td>
 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
 {# using the first SourceCountry may be incorrect later #}
-<td class='text-wrap'>{{ p.SourceCountries.first.get_CountryOfManufacture_Value_display }}</td>
 <td class='text-wrap'>{{ p.SourceCountries.first.AssignedCostPercentage_Value|default_if_none:'' }}</td>
+<td class='text-wrap'>{{ p.SourceCountries.first.AttestationURL_Value }}</td>
 <td class='text-wrap'>
     {% if p.ProdDatasheetURL_Value %}
     <a href='{{ p.ProdDatasheetURL_Value }}' target='_blank' rel='noopener noreferrer'>Datasheet</a>
