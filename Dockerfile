@@ -27,7 +27,7 @@ RUN uv sync --group mysql
 # # Switch to this user
 # USER 1000:1000
 
-RUN chmod +x ./start.sh
+RUN sed -i 's/\r$//' ./start.sh && chmod +x ./start.sh
 
 # Expose the port Django runs on
 EXPOSE 8000

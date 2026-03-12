@@ -639,11 +639,6 @@ class Entity(models.Model):
     TaxID_Value = models.CharField(blank=True, max_length=20)
     URL_Value = models.URLField(blank=True)
     WorkPhone_Value = models.CharField(blank=True, max_length=15)
-    Addresses = models.ManyToManyField('Address')
-    AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
-    Contacts = models.ManyToManyField('Contact')
-    CreditRatings = models.ManyToManyField('CreditRating')
-    PaymentMethods = models.ManyToManyField('PaymentMethod')
 
 class Product(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
@@ -655,16 +650,7 @@ class Product(models.Model):
     ProdMfr_Value = models.CharField(blank=True, max_length=500)
     ProdName_Value = models.CharField(blank=True, max_length=500)
     ProdType_Value = models.CharField(max_length=max(map(len, ProdTypeItemTypeEnum)), choices=ProdTypeItemTypeEnum, blank=True)
-    Dimension = models.OneToOneField('Dimension', on_delete=models.CASCADE)
-    ProdInstructions = models.ManyToManyField('ProdInstruction')
-    AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
-    CommunicationStacks = models.ManyToManyField('CommunicationStack')
-    Packages = models.ManyToManyField('Package')
-    ProdCertifications = models.ManyToManyField('ProdCertification')
-    ProdQualifications = models.ManyToManyField('ProdQualification')
-    ProdSpecifications = models.ManyToManyField('ProdSpecification')
-    SourceCountries = models.ManyToManyField('SourceCountry')
-    Warranties = models.ManyToManyField('Warranty')
+
 
 class Address(models.Model):
     AddrLine1_Value = models.CharField(blank=True, max_length=500)
@@ -678,13 +664,28 @@ class Address(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     StateProvince_Value = models.CharField(blank=True, max_length=500)
     ZipPostalCode_Value = models.CharField(blank=True, max_length=500)
-    Location = models.OneToOneField('Location', on_delete=models.CASCADE)
+    # Reversed: Location FK now on Location model pointing back to Address
+    # FK from Entity (was M2M)
+    Entity = models.ForeignKey('Entity', null=True, blank=True, on_delete=models.CASCADE, related_name='Addresses')
+    # Reversed: Contact FK now here (was Contact.Address)
+    Contact = models.OneToOneField('Contact', null=True, blank=True, on_delete=models.CASCADE, related_name='Address')
 
-class AlternativeIdentifier(models.Model):
+class BaseAlternativeIdentifier(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     Identifier_Value = models.CharField(blank=True, max_length=500)
     IdentifierType_Value = models.CharField(max_length=max(map(len, IdentifierTypeItemTypeEnum)), choices=IdentifierTypeItemTypeEnum, blank=True)
     SourceName_Value = models.CharField(blank=True, max_length=500)
+    class Meta:
+        abstract = True
+
+class ProductAlternativeIdentifier(BaseAlternativeIdentifier):
+    Product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='AlternativeIdentifiers')
+
+class EntityAlternativeIdentifier(BaseAlternativeIdentifier):
+    Entity = models.ForeignKey('Entity', on_delete=models.CASCADE, related_name='AlternativeIdentifiers')
+
+class PaymentMethodAlternativeIdentifier(BaseAlternativeIdentifier):
+    PaymentMethod = models.ForeignKey('PaymentMethod', on_delete=models.CASCADE, related_name='AlternativeIdentifiers')
 
 class CertificationAgency(Entity):
     CertificationAgencyID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
@@ -694,20 +695,28 @@ class Checksum(models.Model):
     ChecksumDetail_Value = models.CharField(blank=True, max_length=500)
     ChecksumKey_Value = models.CharField(blank=True, max_length=500)
     ChecksumType_Value = models.CharField(max_length=max(map(len, ChecksumTypeItemTypeEnum)), choices=ChecksumTypeItemTypeEnum, blank=True)
+    # Reversed: was Firmware.Checksum
+    Firmware = models.OneToOneField('Firmware', null=True, blank=True, on_delete=models.CASCADE, related_name='Checksum')
 
 class Comment(models.Model):
     CommentDate_Value = models.DateTimeField(blank=True, null=True)
     CommentID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
     CommentText_Value = models.CharField(blank=True, max_length=500)
-    Scope = models.OneToOneField('Scope', on_delete=models.CASCADE)
+    # Reversed: Scope FK now on Scope model pointing back to Comment
+    # Keep M2M (genuinely many-to-many)
     Tags = models.ManyToManyField('Tag')
-    Contacts = models.ManyToManyField('Contact')
+    # FK from Comment to Contact (was Comment.Contacts M2M)
+    Contact = models.ForeignKey('Contact', null=True, blank=True, on_delete=models.CASCADE, related_name='Comments')
+    # FK from PaymentMethod (was M2M)
+    PaymentMethod = models.ForeignKey('PaymentMethod', null=True, blank=True, on_delete=models.CASCADE, related_name='Comments')
 
 class CommunicationStack(models.Model):
     ApplicationProtocol_Value = models.CharField(max_length=max(map(len, ApplicationProtocolTypeItemTypeEnum)), choices=ApplicationProtocolTypeItemTypeEnum, blank=True)
     CertificationStandard_Value = models.CharField(max_length=max(map(len, StandardTypeItemTypeEnum)), choices=StandardTypeItemTypeEnum, blank=True)
     PhysicalLayer_Value = models.CharField(max_length=max(map(len, PhysicalLayerTypeItemTypeEnum)), choices=PhysicalLayerTypeItemTypeEnum, blank=True)
     TransportLayer_Value = models.CharField(max_length=max(map(len, TransportLayerTypeItemTypeEnum)), choices=TransportLayerTypeItemTypeEnum, blank=True)
+    # Phase A: new FK from Product (was Product.CommunicationStacks M2M, empty)
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='CommunicationStacks')
 
 class Contact(models.Model):
     ContactID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
@@ -724,11 +733,15 @@ class Contact(models.Model):
     Title_Value = models.CharField(blank=True, max_length=500)
     URL_Value = models.URLField(blank=True)
     WorkPhone_Value = models.CharField(blank=True, max_length=15)
-    Address = models.OneToOneField('Address', on_delete=models.CASCADE)
+    # Reversed: Address FK now on Address model pointing back to Contact
+    # FK from Entity (was Entity.Contacts M2M)
+    Entity = models.ForeignKey('Entity', null=True, blank=True, on_delete=models.CASCADE, related_name='Contacts')
 
 class CreditRating(models.Model):
     CreditScore_Value = models.CharField(blank=True, max_length=500)
     CreditScoreSource_Value = models.CharField(blank=True, max_length=500)
+    # Phase A: new FK from Entity (was Entity.CreditRatings M2M, empty)
+    Entity = models.ForeignKey('Entity', null=True, blank=True, on_delete=models.CASCADE, related_name='CreditRatings')
 
 class DCInput(models.Model):
     MPPTNumber_Value = models.IntegerField(blank=True, null=True)
@@ -740,7 +753,8 @@ class DCInput(models.Model):
     VoltageDCMin_Value = models.FloatField(blank=True, null=True)
     VoltageDCNom_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit, blank=True)
     VoltageDCNom_Value = models.FloatField(blank=True, null=True)
-    MPPTs = models.ManyToManyField('MPPT')
+    # Reversed: was ProdBattery.DCInput, now DCInput points to ProdBattery
+    ProdBattery = models.OneToOneField('ProdBattery', null=True, blank=True, on_delete=models.CASCADE, related_name='DCInput')
 
 class DCOutput(models.Model):
     CurrentDCMax_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit, blank=True)
@@ -755,7 +769,8 @@ class DCOutput(models.Model):
     VoltageDCMin_Value = models.FloatField(blank=True, null=True)
     VoltageDCNom_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit, blank=True)
     VoltageDCNom_Value = models.FloatField(blank=True, null=True)
-    PowerDCPeaks = models.ManyToManyField('PowerDCPeak')
+    # Reversed: was ProdBattery.DCOutput, now DCOutput points to ProdBattery
+    ProdBattery = models.OneToOneField('ProdBattery', null=True, blank=True, on_delete=models.CASCADE, related_name='DCOutput')
 
 class Dimension(models.Model):
     Height_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit, blank=True)
@@ -768,11 +783,15 @@ class Dimension(models.Model):
     Weight_Value = models.FloatField(blank=True, null=True)
     Width_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit, blank=True)
     Width_Value = models.FloatField(blank=True, null=True)
+    # Reversed: was Product.Dimension and Package.Dimension
+    Product = models.OneToOneField('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='Dimension')
+    Package = models.OneToOneField('Package', null=True, blank=True, on_delete=models.CASCADE, related_name='Dimension')
 
 class Firmware(models.Model):
     FirmwareVersion_Value = models.CharField(blank=True, max_length=500)
-    Products = models.ManyToManyField('Product')
-    Checksum = models.OneToOneField('Checksum', on_delete=models.CASCADE)
+    # Reversed: Checksum FK now on Checksum model
+    # Reversed: was ProdCertification.Firmware
+    ProdCertification = models.OneToOneField('ProdCertification', null=True, blank=True, on_delete=models.CASCADE, related_name='Firmware')
 
 class Location(models.Model):
     Altitude_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit, blank=True)
@@ -787,6 +806,9 @@ class Location(models.Model):
     LocationType_Value = models.CharField(max_length=max(map(len, LocationTypeItemTypeEnum)), choices=LocationTypeItemTypeEnum, blank=True)
     Longitude_Unit = models.CharField(max_length=max(map(len, PlaneAngleItemTypeUnit)), choices=PlaneAngleItemTypeUnit, blank=True)
     Longitude_Value = models.FloatField(blank=True, null=True)
+    # Reversed: was Address.Location and Scope.Location
+    Address = models.OneToOneField('Address', null=True, blank=True, on_delete=models.CASCADE, related_name='Location')
+    Scope = models.OneToOneField('Scope', null=True, blank=True, on_delete=models.CASCADE, related_name='Location')
 
 class MPPT(models.Model):
     CurrentDCMax_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit, blank=True)
@@ -798,6 +820,8 @@ class MPPT(models.Model):
     VoltageMPPTMax_Value = models.FloatField(blank=True, null=True)
     VoltageMPPTMin_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit, blank=True)
     VoltageMPPTMin_Value = models.FloatField(blank=True, null=True)
+    # Phase A: new FK from DCInput (was DCInput.MPPTs M2M, empty)
+    DCInput = models.ForeignKey('DCInput', null=True, blank=True, on_delete=models.CASCADE, related_name='MPPTs')
 
 class ModuleElectRating(models.Model):
     CurrentAtMaximumPower_Unit = models.CharField(max_length=max(map(len, ElectricCurrentItemTypeUnit)), choices=ElectricCurrentItemTypeUnit, blank=True)
@@ -811,24 +835,31 @@ class ModuleElectRating(models.Model):
     VoltageAtMaximumPower_Value = models.FloatField(blank=True, null=True)
     VoltageOpenCircuit_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit, blank=True)
     VoltageOpenCircuit_Value = models.FloatField(blank=True, null=True)
+    # Was ProdModule.ModuleElectRatings M2M, now FK
+    ProdModule = models.ForeignKey('ProdModule', null=True, blank=True, on_delete=models.CASCADE, related_name='ModuleElectRatings')
 
 class Package(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     Quantity_Value = models.IntegerField(blank=True, null=True)
-    Dimension = models.OneToOneField('Dimension', on_delete=models.CASCADE)
+    # Reversed: Dimension FK now on Dimension model
+    # FK from Product (was M2M)
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='Packages')
 
 class PaymentMethod(models.Model):
     PaymentMethodName_Value = models.CharField(blank=True, max_length=500)
     PaymentToken_Value = models.CharField(blank=True, max_length=500)
+    # Keep M2M (genuinely many-to-many)
     Tags = models.ManyToManyField('Tag')
-    AlternativeIdentifiers = models.ManyToManyField('AlternativeIdentifier')
-    Comments = models.ManyToManyField('Comment')
+    # Phase A: new FK from Entity (was Entity.PaymentMethods M2M, empty)
+    Entity = models.ForeignKey('Entity', null=True, blank=True, on_delete=models.CASCADE, related_name='PaymentMethods')
 
 class PowerDCPeak(models.Model):
     Duration_Unit = models.CharField(max_length=max(map(len, DurationItemTypeUnit)), choices=DurationItemTypeUnit, blank=True)
     Duration_Value = models.FloatField(blank=True, null=True)
     PowerDC_Unit = models.CharField(max_length=max(map(len, PowerItemTypeUnit)), choices=PowerItemTypeUnit, blank=True)
     PowerDC_Value = models.FloatField(blank=True, null=True)
+    # Phase A: new FK from DCOutput (was DCOutput.PowerDCPeaks M2M, empty)
+    DCOutput = models.ForeignKey('DCOutput', null=True, blank=True, on_delete=models.CASCADE, related_name='PowerDCPeaks')
 
 class ProdBattery(Product):
     AltitudeInstallationMax_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit, blank=True)
@@ -846,8 +877,7 @@ class ProdBattery(Product):
     TemperatureMaximumOperating_Value = models.FloatField(blank=True, null=True)
     TemperatureMinimumOperating_Unit = models.CharField(max_length=max(map(len, TemperatureItemTypeUnit)), choices=TemperatureItemTypeUnit, blank=True)
     TemperatureMinimumOperating_Value = models.FloatField(blank=True, null=True)
-    DCInput = models.OneToOneField('DCInput', on_delete=models.CASCADE)
-    DCOutput = models.OneToOneField('DCOutput', on_delete=models.CASCADE)
+    # Reversed: DCInput/DCOutput FKs now on those models pointing back to ProdBattery
 
 class ProdCell(Product):
     CellColor_Value = models.CharField(blank=True, max_length=500)
@@ -863,8 +893,10 @@ class ProdCertification(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     FileFolderURL_Value = models.URLField(blank=True)
     CertificationAgency = models.ForeignKey('CertificationAgency', on_delete=models.CASCADE, null=True)
-    Firmware = models.OneToOneField('Firmware', on_delete=models.CASCADE)
+    # Reversed: Firmware FK now on Firmware model
     TestLab = models.ForeignKey('TestLab', on_delete=models.CASCADE, null=True)
+    # Was Product.ProdCertifications M2M, now FK
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='ProdCertifications')
 
 class ProdGlazing(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
@@ -872,6 +904,8 @@ class ProdGlazing(models.Model):
     GlazingMaterial_Value = models.CharField(blank=True, max_length=500)
     Height_Unit = models.CharField(max_length=max(map(len, LengthItemTypeUnit)), choices=LengthItemTypeUnit, blank=True)
     Height_Value = models.FloatField(blank=True, null=True)
+    # Reversed: was ProdModule.ProdGlazing
+    ProdModule = models.OneToOneField('ProdModule', null=True, blank=True, on_delete=models.CASCADE, related_name='ProdGlazing')
 
 class ProdModule(Product):
     BacksheetColor_Value = models.CharField(max_length=max(map(len, BacksheetColorItemTypeEnum)), choices=BacksheetColorItemTypeEnum, blank=True)
@@ -923,8 +957,7 @@ class ProdModule(Product):
     VoltageMaximumSystem_Unit = models.CharField(max_length=max(map(len, VoltageItemTypeUnit)), choices=VoltageItemTypeUnit, blank=True)
     VoltageMaximumSystem_Value = models.FloatField(blank=True, null=True)
     ProdCell = models.OneToOneField('ProdCell', on_delete=models.CASCADE)
-    ProdGlazing = models.OneToOneField('ProdGlazing', on_delete=models.CASCADE)
-    ModuleElectRatings = models.ManyToManyField('ModuleElectRating')
+    # Reversed: ProdGlazing FK now on ProdGlazing model, ModuleElectRatings now FK on ModuleElectRating
 
 class ProdQualification(models.Model):
     QualificationExpirationDate_Value = models.DateField(blank=True, null=True)
@@ -932,6 +965,8 @@ class ProdQualification(models.Model):
     QualificationNotes_Value = models.CharField(blank=True, max_length=500)
     UpdateLast_Value = models.DateTimeField(blank=True, null=True)
     QualifyingAgency = models.ForeignKey('QualifyingAgency', on_delete=models.CASCADE, null=True)
+    # Phase A: new FK from Product (was Product.ProdQualifications M2M, empty)
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='ProdQualifications')
 
 class ProdSpecification(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
@@ -939,6 +974,8 @@ class ProdSpecification(models.Model):
     SpecificationType_Value = models.CharField(max_length=max(map(len, SpecificationTypeItemTypeEnum)), choices=SpecificationTypeItemTypeEnum, blank=True)
     SpecificationUnit_Value = models.CharField(blank=True, max_length=500)
     SpecificationValue_Value = models.CharField(blank=True, max_length=500)
+    # Phase A: new FK from Product (was Product.ProdSpecifications M2M, empty)
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='ProdSpecifications')
 
 class QualifyingAgency(Entity):
     QualifyingAgencyID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
@@ -949,7 +986,9 @@ class Scope(models.Model):
     FileFolderURL_Value = models.URLField(blank=True)
     ScopeID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
     ScopeType_Value = models.CharField(max_length=max(map(len, ScopeTypeItemTypeEnum)), choices=ScopeTypeItemTypeEnum, blank=True)
-    Location = models.OneToOneField('Location', on_delete=models.CASCADE)
+    # Reversed: Location FK now on Location model
+    # Reversed: was Comment.Scope
+    Comment = models.OneToOneField('Comment', null=True, blank=True, on_delete=models.CASCADE, related_name='Scope')
 
 class SourceCountry(models.Model):
     AssignedCostPercentage_Unit = models.CharField(max_length=max(map(len, DecimalPercentItemTypeUnit)), choices=DecimalPercentItemTypeUnit, blank=True)
@@ -959,6 +998,8 @@ class SourceCountry(models.Model):
     CountryOfManufactureIsNotPFE_Value = models.BooleanField(blank=True, null=True)
     CountryOfOwnershipForPFE_Value = models.CharField(max_length=max(map(len, ISOCountryItemTypeEnum)), choices=ISOCountryItemTypeEnum, blank=True)
     CountryOfOwnershipIsNotPFE_Value = models.BooleanField(blank=True, null=True)
+    # Was Product.SourceCountries M2M, now FK
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='SourceCountries')
 
 class TestLab(Entity):
     TestLabID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
@@ -974,9 +1015,13 @@ class Warranty(models.Model):
     WarrantyID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)
     WarrantyName_Value = models.CharField(blank=True, max_length=500)
     WarrantyType_Value = models.CharField(max_length=max(map(len, WarrantyItemTypeEnum)), choices=WarrantyItemTypeEnum, blank=True)
+    # Phase A: new FK from Product (was Product.Warranties M2M, empty)
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='Warranties')
 
 class ProdInstruction(models.Model):
     Value = models.CharField(blank=True, max_length=500)
+    # Phase A: new FK from Product (was Product.ProdInstructions M2M, empty)
+    Product = models.ForeignKey('Product', null=True, blank=True, on_delete=models.CASCADE, related_name='ProdInstructions')
 
 class Tag(models.Model):
     Value = models.CharField(blank=True, max_length=500)
