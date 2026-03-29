@@ -12,6 +12,23 @@ wheels/
 # Virtual environments
 .venv
 
+# Keys and certificates
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.cer
+*.der
+*.jks
+
+# Terraform
+terraform/bastion_key
+terraform/bastion_key.pub
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+*.tfvars
+
 # Other
 *.sqlite3
 *.output

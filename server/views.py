@@ -5,6 +5,7 @@ from functools import partial
 import itertools
 
 from django.core import paginator
+from django.core.exceptions import ObjectDoesNotExist
 import django.db.models
 from django.db.models import Q
 import django.template
@@ -41,8 +42,13 @@ def model_to_ob_json(model, group=False, human_readable_enums=False):
                 value = getattr(models, f'{element.item_type.name}Enum')(value).label
         ob_json_grouped['elements'][element.name]['Value'] = value
     for nested_object in ob_model.all_nested_objects().order_by('name'):
-        if getattr(model, nested_object.name) is not None:
-            ob_json_grouped['nested_objects'][nested_object.name] = model_to_ob_json(getattr(model, nested_object.name), group=group, human_readable_enums=human_readable_enums)
+        try:
+            nested = getattr(model, nested_object.name)
+        except ObjectDoesNotExist:
+            nested = None
+        if nested is not None:
+            ob_json_grouped['nested_objects'][nested_object.name] = model_to_ob_json(
+                nested, group=group, human_readable_enums=human_readable_enums)
         else:
             ob_json_grouped['nested_objects'][nested_object.name] = None
     for element_array in ob_model.all_element_arrays().order_by('name'):

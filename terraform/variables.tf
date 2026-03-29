@@ -62,3 +62,11 @@ variable "fargate_memory" {
   description = "Amount of memory for Fargate task. E.g., '512' (0.5GB)"
   default     = "512"
 }
+
+# database
+
+variable "db_password" {
+  description = "Password for the RDS database instance"
+  type        = string
+  sensitive   = true
+}
