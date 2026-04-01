@@ -36,7 +36,11 @@
 <td class='text-wrap'>{{ p.ProdCode_Value }}</td>
 {# using the first SourceCountry may be incorrect later #}
 <td class='text-wrap'>{{ p.SourceCountries.first.AssignedCostPercentage_Value|default_if_none:'' }}</td>
-<td class='text-wrap'>{{ p.SourceCountries.first.AttestationURL_Value }}</td>
+<td class='text-wrap'>
+    {% if p.SourceCountries.first.AttestationURL_Value %}
+    <a href='{{ p.SourceCountries.first.AttestationURL_Value }}' target='_blank' rel='noopener noreferrer'>Attestation</a>
+    {% endif %}
+</td>
 <td class='text-wrap'>
     {% if p.ProdDatasheetURL_Value %}
     <a href='{{ p.ProdDatasheetURL_Value }}' target='_blank' rel='noopener noreferrer'>Datasheet</a>
