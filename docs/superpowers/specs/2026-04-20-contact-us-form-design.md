@@ -50,8 +50,7 @@ Single-column form, centered, max-width ~640px. Bootstrap form styling. Fields i
 | `website` (honeypot) | text | no | hidden via CSS, off-screen |
 
 Category options:
-- `general` — General question *(default)*
-- `contact` — Contact us
+- `question` — Question *(default)*
 - `bug` — Bug report
 - `suggestion` — Suggestion
 - `other` — Other
@@ -85,8 +84,7 @@ Canonical record of every successful submission. Written first, before any exter
 ```python
 class FeedbackSubmission(models.Model):
     class Category(models.TextChoices):
-        GENERAL = 'general', 'General question'
-        CONTACT = 'contact', 'Contact us'
+        QUESTION = 'question', 'Question'
         BUG = 'bug', 'Bug report'
         SUGGESTION = 'suggestion', 'Suggestion'
         OTHER = 'other', 'Other'
@@ -96,7 +94,7 @@ class FeedbackSubmission(models.Model):
     last_name = models.CharField(max_length=100, blank=True)
     email = models.EmailField()
     phone = models.CharField(max_length=30, blank=True)
-    category = models.CharField(max_length=20, choices=Category.choices, default=Category.GENERAL)
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.QUESTION)
     message = models.TextField(max_length=5000)
 
     source_ip = models.GenericIPAddressField(null=True, blank=True)
@@ -131,7 +129,7 @@ class SiteSettings(models.Model):
         help_text='Workato recipe webhook URL. Blank = do not post to Workato.'
     )
     rate_limit_per_hour = models.PositiveIntegerField(
-        default=5,
+        default=3,
         help_text='Max submissions per IP per hour. 0 = disabled.'
     )
 
@@ -238,7 +236,7 @@ New templates under `server/templates/server/`:
 Layered, minimal-friction:
 
 1. **Honeypot field** (`website`) — hidden via `style="position:absolute;left:-9999px"` plus `tabindex="-1"` and `autocomplete="off"`. Bots fill it; humans can't see it. Non-empty submissions are silently dropped.
-2. **Per-IP rate limit** — 5 submissions/hour by default, configurable in `SiteSettings`. Implemented via a simple `FeedbackSubmission.objects.filter(source_ip=..., created_at__gte=...).count()` check. No external dependencies.
+2. **Per-IP rate limit** — 3 submissions/hour by default, configurable in `SiteSettings`. Implemented via a simple `FeedbackSubmission.objects.filter(source_ip=..., created_at__gte=...).count()` check. No external dependencies.
 3. **Email field validation** — Django's `EmailField` rejects malformed addresses.
 4. **Max message length** — 5000 chars prevents absurdly large payloads.
 
@@ -259,7 +257,7 @@ All operator-tunable values live in `SiteSettings` (DB, admin-editable). No secr
 | `feedback_email_to` | blank | No email sent |
 | `feedback_email_from` | blank | No email sent (required if `feedback_email_to` set) |
 | `workato_webhook_url` | blank | No Workato POST |
-| `rate_limit_per_hour` | 5 | 0 disables rate limiting |
+| `rate_limit_per_hour` | 3 | 0 disables rate limiting |
 
 If both email fields and the Workato URL are blank, submissions still save to the DB. Jan can review them manually at `/admin/`.
 
