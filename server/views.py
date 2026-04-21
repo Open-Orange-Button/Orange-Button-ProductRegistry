@@ -18,7 +18,7 @@ from django.utils import timezone
 
 import ob_taxonomy.models as ob_models
 import server.models as models
-from server.feedback import ContactForm, send_feedback_email, post_to_workato
+from server.feedback import ContactForm, send_feedback_email, post_to_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -289,7 +289,7 @@ def contact(request):
             )
 
             send_feedback_email(submission, settings_row)
-            post_to_workato(submission, settings_row)
+            post_to_webhook(submission, settings_row)
 
             return HttpResponseRedirect(reverse('product:contact-thank-you'))
     else:
