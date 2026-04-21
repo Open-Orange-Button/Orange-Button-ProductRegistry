@@ -154,3 +154,18 @@ class ContactFormTests(TestCase):
     def test_honeypot_field_present(self):
         form = ContactForm()
         self.assertIn('website', form.fields)
+
+
+from django.urls import reverse
+
+
+class ContactViewGetTests(TestCase):
+    def test_get_reverses_to_url(self):
+        self.assertEqual(reverse('product:contact'), '/product/contact/')
+
+    def test_get_returns_200_and_form(self):
+        resp = self.client.get('/product/contact/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('form', resp.context)
+        self.assertContains(resp, 'Get in touch')
+        self.assertContains(resp, 'name="email"')
