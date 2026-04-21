@@ -169,3 +169,13 @@ class ContactViewGetTests(TestCase):
         self.assertIn('form', resp.context)
         self.assertContains(resp, 'Get in touch')
         self.assertContains(resp, 'name="email"')
+
+
+class ContactThankYouViewTests(TestCase):
+    def test_reverses_to_url(self):
+        self.assertEqual(reverse('product:contact-thank-you'), '/product/contact/thank-you/')
+
+    def test_returns_200_with_success_message(self):
+        resp = self.client.get('/product/contact/thank-you/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Thanks, we got your message')
