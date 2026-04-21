@@ -1,0 +1,20 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools-items %}
+{{ block.super }}
+{% if original %}
+<li>
+    <form method="post"
+          action="{% url 'admin:server_sitesettings_send_test_webhook' %}"
+          style="display:inline;">
+        {% csrf_token %}
+        <button type="submit"
+                class="historylink"
+                style="background:none; border:1px solid #999; cursor:pointer; padding:5px 10px; font:inherit; color:inherit;"
+                title="POST a synthetic test event to the configured webhook URL. Does not save a submission.">
+            Send test webhook event
+        </button>
+    </form>
+</li>
+{% endif %}
+{% endblock %}

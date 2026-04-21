@@ -31,6 +31,21 @@ ALLOWED_HOSTS += [h for h in os.environ.get('ADDITIONAL_ALLOWED_HOSTS', '').spli
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['*']
 
+# CSRF trusted origins (Django 4+ requires explicit https:// origins for
+# POST requests). Set CSRF_TRUSTED_ORIGINS env var to a comma-separated list
+# of scheme+host URLs (e.g. "https://productregistry.oballiance.org").
+# Falls back to deriving https:// origins from ALLOWED_HOSTS.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{h}' for h in ALLOWED_HOSTS
+        if h and h != '*' and not h.startswith('.')
+        and not h.replace('.', '').isdigit()  # skip bare IPs
+    ]
+
 
 # Application definition
 
@@ -137,3 +152,19 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = 'static/'
+
+
+# Email
+# In dev (no EMAIL_HOST), Django falls back to printing emails to the console.
+# In prod, set EMAIL_HOST/EMAIL_PORT/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD env
+# vars to point at AWS SES SMTP. See:
+# https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp.html
+if os.environ.get('EMAIL_HOST'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.environ['EMAIL_HOST']
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '1') == '1'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

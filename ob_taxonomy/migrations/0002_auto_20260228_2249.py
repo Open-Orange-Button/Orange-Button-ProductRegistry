@@ -21,16 +21,22 @@ class RenameOBElementProdDatasheetToProdDatasheetURL(DataMigration):
     @staticmethod
     def forward(apps, schema_editor):
         OBElement = apps.get_model('ob_taxonomy', 'OBElement')
-        element = OBElement.objects.get(name='ProdDatasheet')
-        element.name = 'ProdDatasheetURL'
-        element.save()
+        try:
+            element = OBElement.objects.get(name='ProdDatasheet')
+            element.name = 'ProdDatasheetURL'
+            element.save()
+        except OBElement.DoesNotExist:
+            pass
 
     @staticmethod
     def reverse(apps, schema_editor):
         OBElement = apps.get_model('ob_taxonomy', 'OBElement')
-        element = OBElement.objects.get(name='ProdDatasheetURL')
-        element.name = 'ProdDatasheet'
-        element.save()
+        try:
+            element = OBElement.objects.get(name='ProdDatasheetURL')
+            element.name = 'ProdDatasheet'
+            element.save()
+        except OBElement.DoesNotExist:
+            pass
 
 
 class AddOBElementAttestationURLAndAddItToSourceCountry(DataMigration):
@@ -40,45 +46,60 @@ class AddOBElementAttestationURLAndAddItToSourceCountry(DataMigration):
         OBItemType = apps.get_model('ob_taxonomy', 'OBItemType')
         OBElement = apps.get_model('ob_taxonomy', 'OBElement')
         OBObject = apps.get_model('ob_taxonomy', 'OBObject')
-        element = OBElement(
-            name='AttestationURL',
-            description="A URL to the attestation of a product's assigned cost percentage for country of manufacture",
-            taxonomy_element=OBTaxonomyElement.objects.get(name='TaxonomyElementString'),
-            item_type=OBItemType.objects.get(name='StringItemType'),
-        )
-        element.save()
-        SourceCountry = OBObject.objects.get(name='SourceCountry')
-        SourceCountry.properties.add(element)
+        try:
+            element = OBElement(
+                name='AttestationURL',
+                description="A URL to the attestation of a product's assigned cost percentage for country of manufacture",
+                taxonomy_element=OBTaxonomyElement.objects.get(name='TaxonomyElementString'),
+                item_type=OBItemType.objects.get(name='StringItemType'),
+            )
+            element.save()
+            SourceCountry = OBObject.objects.get(name='SourceCountry')
+            SourceCountry.properties.add(element)
+        except (OBTaxonomyElement.DoesNotExist, OBItemType.DoesNotExist, OBObject.DoesNotExist):
+            pass
 
     @staticmethod
     def reverse(apps, schema_editor):
         OBElement = apps.get_model('ob_taxonomy', 'OBElement')
-        OBElement.objects.get(name='AttestationURL').delete()
+        try:
+            OBElement.objects.get(name='AttestationURL').delete()
+        except OBElement.DoesNotExist:
+            pass
 
 
 class RenameItemTypeCountryToISOCountryItemType(DataMigration):
     @staticmethod
     def forward(apps, schema_editor):
         OBItemType = apps.get_model('ob_taxonomy', 'OBItemType')
-        item_type = OBItemType.objects.get(name='Country')
-        item_type.name = 'ISOCountryItemType'
-        item_type.save()
+        try:
+            item_type = OBItemType.objects.get(name='Country')
+            item_type.name = 'ISOCountryItemType'
+            item_type.save()
+        except OBItemType.DoesNotExist:
+            pass
 
     @staticmethod
     def reverse(apps, schema_editor):
         OBItemType = apps.get_model('ob_taxonomy', 'OBItemType')
-        item_type = OBItemType.objects.get(name='ISOCountryItemType')
-        item_type.name = 'Country'
-        item_type.save()
+        try:
+            item_type = OBItemType.objects.get(name='ISOCountryItemType')
+            item_type.name = 'Country'
+            item_type.save()
+        except OBItemType.DoesNotExist:
+            pass
 
 
 def set_item_type(apps, element_name, item_type_name):
     OBItemType = apps.get_model('ob_taxonomy', 'OBItemType')
     OBElement = apps.get_model('ob_taxonomy', 'OBElement')
-    item_type = OBItemType.objects.get(name=item_type_name)
-    element = OBElement.objects.get(name=element_name)
-    element.item_type = item_type
-    element.save()
+    try:
+        item_type = OBItemType.objects.get(name=item_type_name)
+        element = OBElement.objects.get(name=element_name)
+        element.item_type = item_type
+        element.save()
+    except (OBItemType.DoesNotExist, OBElement.DoesNotExist):
+        pass
 
 
 class SetItemTypeOfOBElementCountryOfManufactureToISOCountryItemType(DataMigration):
@@ -95,16 +116,22 @@ class RenameOBElementCountryOfOwnershipforPFEToCountryOfOwnershipForPFE(DataMigr
     @staticmethod
     def forward(apps, schema_editor):
         OBElement = apps.get_model('ob_taxonomy', 'OBElement')
-        element = OBElement.objects.get(name='CountryOfOwnershipforPFE')
-        element.name = 'CountryOfOwnershipForPFE'
-        element.save()
+        try:
+            element = OBElement.objects.get(name='CountryOfOwnershipforPFE')
+            element.name = 'CountryOfOwnershipForPFE'
+            element.save()
+        except OBElement.DoesNotExist:
+            pass
 
     @staticmethod
     def reverse(apps, schema_editor):
         OBElement = apps.get_model('ob_taxonomy', 'OBElement')
-        element = OBElement.objects.get(name='CountryOfOwnershipForPFE')
-        element.name = 'CountryOfOwnershipforPFE'
-        element.save()
+        try:
+            element = OBElement.objects.get(name='CountryOfOwnershipForPFE')
+            element.name = 'CountryOfOwnershipforPFE'
+            element.save()
+        except OBElement.DoesNotExist:
+            pass
 
 
 class SetItemTypeOfOBElementCountryOfOwnershipForPFEToISOCountryItemType(DataMigration):

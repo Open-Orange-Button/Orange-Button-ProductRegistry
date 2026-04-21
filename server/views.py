@@ -1,19 +1,26 @@
 import ast
 from collections import defaultdict
 import datetime
+from datetime import timedelta
 from functools import partial
 import itertools
+import logging
 
 from django.core import paginator
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import validate_ipv46_address
 import django.db.models
 from django.db.models import Q
 import django.template
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, reverse
+from django.utils import timezone
 
 import ob_taxonomy.models as ob_models
 import server.models as models
+from server.feedback import ContactForm, send_feedback_email, post_to_webhook
+
+logger = logging.getLogger(__name__)
 
 
 GROUP_NAMES = ('elements', 'nested_objects', 'element_arrays', 'object_arrays')
@@ -212,3 +219,83 @@ def product_list_us_domestic(request):
             page_products=paginator.Paginator(products, 20).get_page(request.GET.get('page'))
         )
     )
+
+
+def _client_ip(request):
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    candidate = xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
+    if not candidate:
+        return None
+    try:
+        validate_ipv46_address(candidate)
+    except ValidationError:
+        # XFF can be spoofed by clients; fall back to the peer Django controls.
+        return request.META.get('REMOTE_ADDR')
+    return candidate
+
+
+def _mask_email(addr):
+    if not addr or '@' not in addr:
+        return addr or ''
+    local, _, domain = addr.partition('@')
+    if not local:
+        return addr
+    return f'{local[0]}***@{domain}'
+
+
+def _rate_limit_exceeded(ip, limit):
+    if not limit or not ip:
+        return False
+    since = timezone.now() - timedelta(hours=1)
+    count = models.FeedbackSubmission.objects.filter(
+        source_ip=ip, created_at__gte=since
+    ).count()
+    return count >= limit
+
+
+def contact(request):
+    if request.method == 'POST':
+        form = ContactForm(data=request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            if cd.get('website'):
+                logger.info(
+                    'contact honeypot tripped ip=%s user_agent=%r',
+                    _client_ip(request),
+                    request.META.get('HTTP_USER_AGENT', '')[:200],
+                )
+                return HttpResponseRedirect(reverse('product:contact-thank-you'))
+
+            ip = _client_ip(request)
+            settings_row = models.SiteSettings.get()
+            if _rate_limit_exceeded(ip, settings_row.rate_limit_per_hour):
+                logger.info('contact rate-limit tripped ip=%s', ip)
+                form.add_error(None, 'Too many submissions — please try again later.')
+                return render(request, 'server/contact.html', context={'form': form})
+
+            submission = models.FeedbackSubmission.objects.create(
+                first_name=cd['first_name'],
+                last_name=cd['last_name'],
+                email=cd['email'],
+                phone=cd['phone'],
+                category=cd['category'],
+                message=cd['message'],
+                source_ip=ip,
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
+            logger.info(
+                'contact submission saved id=%s category=%s email=%s',
+                submission.pk, submission.category, _mask_email(submission.email),
+            )
+
+            send_feedback_email(submission, settings_row)
+            post_to_webhook(submission, settings_row)
+
+            return HttpResponseRedirect(reverse('product:contact-thank-you'))
+    else:
+        form = ContactForm()
+    return render(request, 'server/contact.html', context={'form': form})
+
+
+def contact_thank_you(request):
+    return render(request, 'server/contact_thank_you.html')

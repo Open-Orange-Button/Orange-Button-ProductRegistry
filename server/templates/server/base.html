@@ -32,6 +32,9 @@
                         <a class='nav-link {% block navbar-product-list-us-domestic-active %}{% endblock %}' aria-current='page' href="{% url 'product:list-us-domestic' %}">US Domestic Content</a>
                     </li>
                 </ul>
+                <a href="{% url 'product:contact' %}" class='btn btn-warning fw-semibold'>
+                    <i class='bi bi-envelope'></i> Contact Us
+                </a>
             </div>
         </div>
     </nav>

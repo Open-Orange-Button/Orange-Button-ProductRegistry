@@ -1,3 +1,686 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-# Create your tests here.
+from server.models import FeedbackSubmission, SiteSettings
+
+
+class SmokeTests(TestCase):
+    def test_runner_works(self):
+        self.assertEqual(1 + 1, 2)
+
+
+class FeedbackSubmissionModelTests(TestCase):
+    def test_create_with_all_fields(self):
+        row = FeedbackSubmission.objects.create(
+            first_name='Jane',
+            last_name='Doe',
+            email='jane@example.com',
+            phone='+1-555-0100',
+            category=FeedbackSubmission.Category.BUG,
+            message='Found a bug.',
+            source_ip='203.0.113.7',
+            user_agent='Mozilla/5.0',
+        )
+        self.assertIsNotNone(row.pk)
+        self.assertIsNotNone(row.created_at)
+        self.assertEqual(row.category, 'bug')
+        self.assertIsNone(row.email_delivered_at)
+        self.assertIsNone(row.webhook_delivered_at)
+        self.assertEqual(row.delivery_notes, '')
+
+    def test_category_defaults_to_question(self):
+        row = FeedbackSubmission.objects.create(
+            email='x@example.com',
+            message='Hi',
+        )
+        self.assertEqual(row.category, 'question')
+
+    def test_ordering_newest_first(self):
+        old = FeedbackSubmission.objects.create(email='a@x.com', message='old')
+        new = FeedbackSubmission.objects.create(email='b@x.com', message='new')
+        rows = list(FeedbackSubmission.objects.all())
+        self.assertEqual(rows[0].pk, new.pk)
+        self.assertEqual(rows[1].pk, old.pk)
+
+
+class SiteSettingsModelTests(TestCase):
+    def test_get_creates_singleton_if_missing(self):
+        s = SiteSettings.get()
+        self.assertEqual(s.pk, 1)
+        self.assertEqual(SiteSettings.objects.count(), 1)
+
+    def test_get_returns_existing(self):
+        SiteSettings.objects.create(feedback_email_to='x@y.com')
+        s = SiteSettings.get()
+        self.assertEqual(s.feedback_email_to, 'x@y.com')
+        self.assertEqual(SiteSettings.objects.count(), 1)
+
+    def test_save_always_pins_pk_to_1(self):
+        s = SiteSettings(pk=42, feedback_email_to='a@b.com')
+        s.save()
+        self.assertEqual(s.pk, 1)
+
+    def test_delete_is_noop(self):
+        s = SiteSettings.get()
+        s.delete()
+        self.assertEqual(SiteSettings.objects.count(), 1)
+
+    def test_defaults(self):
+        s = SiteSettings.get()
+        self.assertEqual(s.feedback_email_to, '')
+        self.assertEqual(s.feedback_email_from, '')
+        self.assertEqual(s.webhook_url, '')
+        self.assertEqual(s.rate_limit_per_hour, 3)
+
+
+class AdminRegistrationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.admin = User.objects.create_superuser(
+            username='admin', password='pw', email='admin@example.com'
+        )
+
+    def test_feedbacksubmission_admin_changelist_accessible(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/feedbacksubmission/')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_sitesettings_admin_redirects_to_singleton(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/sitesettings/', follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_sitesettings_change_page_uses_pk_1(self):
+        self.client.force_login(self.admin)
+        SiteSettings.get()  # ensure row exists
+        resp = self.client.get('/admin/server/sitesettings/1/change/')
+        self.assertEqual(resp.status_code, 200)
+
+
+from server.feedback import ContactForm
+
+
+class ContactFormTests(TestCase):
+    VALID = {
+        'first_name': 'Jane',
+        'last_name': 'Doe',
+        'email': 'jane@example.com',
+        'phone': '+1-555-0100',
+        'category': 'question',
+        'message': 'Hello there.',
+        'website': '',
+    }
+
+    def test_valid_form(self):
+        form = ContactForm(data=self.VALID)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_email_is_required(self):
+        data = dict(self.VALID, email='')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_message_is_required(self):
+        data = dict(self.VALID, message='')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('message', form.errors)
+
+    def test_names_and_phone_are_optional(self):
+        data = dict(self.VALID, first_name='', last_name='', phone='')
+        form = ContactForm(data=data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_email_must_be_valid(self):
+        data = dict(self.VALID, email='not-an-email')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_category_must_be_in_choices(self):
+        data = dict(self.VALID, category='bogus')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('category', form.errors)
+
+    def test_message_max_length_5000(self):
+        data = dict(self.VALID, message='x' * 5001)
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('message', form.errors)
+
+    def test_honeypot_field_present(self):
+        form = ContactForm()
+        self.assertIn('website', form.fields)
+
+
+from datetime import timedelta
+from django.utils import timezone
+
+
+class ClientIPValidationTests(TestCase):
+    VALID = {
+        'first_name': 'X',
+        'last_name': 'Y',
+        'email': 'x@example.com',
+        'phone': '',
+        'category': 'question',
+        'message': 'hi',
+        'website': '',
+    }
+
+    def setUp(self):
+        s = SiteSettings.get()
+        s.rate_limit_per_hour = 2
+        s.save()
+
+    def test_bogus_xff_cannot_bypass_rate_limit(self):
+        # A bot rotating fake XFF values should still get rate-limited
+        # because _client_ip falls back to REMOTE_ADDR when XFF is invalid.
+        for bogus in ['not-an-ip', 'attacker-1', 'foo-bar']:
+            resp = self.client.post(
+                '/product/contact/',
+                data=self.VALID,
+                REMOTE_ADDR='198.51.100.1',
+                HTTP_X_FORWARDED_FOR=bogus,
+            )
+        # After 3 requests with 2/hr limit, the 3rd should have been blocked.
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Too many submissions')
+        # Only the first two got saved; the third was rate-limited.
+        self.assertEqual(FeedbackSubmission.objects.count(), 2)
+
+    def test_invalid_xff_stored_as_remote_addr(self):
+        self.client.post(
+            '/product/contact/',
+            data=self.VALID,
+            REMOTE_ADDR='198.51.100.1',
+            HTTP_X_FORWARDED_FOR='definitely-not-an-ip',
+        )
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.source_ip, '198.51.100.1')
+
+    def test_valid_xff_is_used(self):
+        self.client.post(
+            '/product/contact/',
+            data=self.VALID,
+            REMOTE_ADDR='10.0.0.1',
+            HTTP_X_FORWARDED_FOR='203.0.113.5',
+        )
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.source_ip, '203.0.113.5')
+
+
+class RateLimitTests(TestCase):
+    VALID = {
+        'first_name': 'X',
+        'last_name': 'Y',
+        'email': 'x@example.com',
+        'phone': '',
+        'category': 'question',
+        'message': 'hi',
+        'website': '',
+    }
+
+    def setUp(self):
+        self.ip = '203.0.113.99'
+        self.settings_row = SiteSettings.get()
+        self.settings_row.rate_limit_per_hour = 3
+        self.settings_row.save()
+
+    def _post(self):
+        return self.client.post('/product/contact/', data=self.VALID, REMOTE_ADDR=self.ip)
+
+    def test_under_limit_allowed(self):
+        for _ in range(3):
+            resp = self._post()
+            self.assertEqual(resp.status_code, 302)
+        self.assertEqual(FeedbackSubmission.objects.count(), 3)
+
+    def test_over_limit_blocked_and_not_saved(self):
+        for _ in range(3):
+            self._post()
+        resp = self._post()
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Too many submissions')
+        self.assertEqual(FeedbackSubmission.objects.count(), 3)
+
+    def test_limit_counts_only_last_hour(self):
+        for _ in range(3):
+            row = FeedbackSubmission.objects.create(
+                email='old@example.com', message='old',
+                source_ip=self.ip,
+            )
+            FeedbackSubmission.objects.filter(pk=row.pk).update(
+                created_at=timezone.now() - timedelta(hours=2)
+            )
+        resp = self._post()
+        self.assertEqual(resp.status_code, 302)
+
+    def test_zero_disables_rate_limit(self):
+        self.settings_row.rate_limit_per_hour = 0
+        self.settings_row.save()
+        for _ in range(10):
+            resp = self._post()
+            self.assertEqual(resp.status_code, 302)
+        self.assertEqual(FeedbackSubmission.objects.count(), 10)
+
+    def test_other_ip_not_rate_limited(self):
+        for _ in range(3):
+            self._post()
+        resp = self.client.post(
+            '/product/contact/', data=self.VALID, REMOTE_ADDR='203.0.113.100'
+        )
+        self.assertEqual(resp.status_code, 302)
+
+
+from django.urls import reverse
+
+
+class ContactViewGetTests(TestCase):
+    def test_get_reverses_to_url(self):
+        self.assertEqual(reverse('product:contact'), '/product/contact/')
+
+    def test_get_returns_200_and_form(self):
+        resp = self.client.get('/product/contact/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('form', resp.context)
+        self.assertContains(resp, 'Get in touch')
+        self.assertContains(resp, 'name="email"')
+
+
+class ContactThankYouViewTests(TestCase):
+    def test_reverses_to_url(self):
+        self.assertEqual(reverse('product:contact-thank-you'), '/product/contact/thank-you/')
+
+    def test_returns_200_with_success_message(self):
+        resp = self.client.get('/product/contact/thank-you/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Thanks, we got your message')
+
+
+class ContactButtonTests(TestCase):
+    def test_button_present_on_product_list(self):
+        resp = self.client.get('/product/')
+        self.assertContains(resp, 'Contact Us')
+        self.assertContains(resp, 'href="/product/contact/"')
+
+    def test_button_present_on_us_domestic(self):
+        resp = self.client.get('/product/us-domestic-content/')
+        self.assertContains(resp, 'Contact Us')
+
+    def test_button_present_on_contact_page_itself(self):
+        resp = self.client.get('/product/contact/')
+        self.assertContains(resp, 'Contact Us')
+
+
+class ContactPostTests(TestCase):
+    VALID = {
+        'first_name': 'Jane',
+        'last_name': 'Doe',
+        'email': 'jane@example.com',
+        'phone': '+1-555-0100',
+        'category': 'question',
+        'message': 'Hello there.',
+        'website': '',
+    }
+
+    def test_valid_post_creates_submission(self):
+        resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], '/product/contact/thank-you/')
+        self.assertEqual(FeedbackSubmission.objects.count(), 1)
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.email, 'jane@example.com')
+        self.assertEqual(row.category, 'question')
+        self.assertEqual(row.message, 'Hello there.')
+
+    def test_valid_post_captures_source_ip_and_user_agent(self):
+        self.client.post(
+            '/product/contact/',
+            data=self.VALID,
+            REMOTE_ADDR='198.51.100.42',
+            HTTP_USER_AGENT='TestAgent/1.0',
+        )
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.source_ip, '198.51.100.42')
+        self.assertEqual(row.user_agent, 'TestAgent/1.0')
+
+    def test_invalid_post_rerenders_form_no_row_saved(self):
+        data = dict(self.VALID, email='')
+        resp = self.client.post('/product/contact/', data=data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(FeedbackSubmission.objects.count(), 0)
+        self.assertContains(resp, 'Get in touch')
+
+
+class HoneypotTests(TestCase):
+    VALID_WITH_BOT = {
+        'first_name': '',
+        'last_name': '',
+        'email': 'bot@example.com',
+        'phone': '',
+        'category': 'question',
+        'message': 'spam',
+        'website': 'http://bot-filled-this.example.com',
+    }
+
+    def test_honeypot_trip_redirects_to_thank_you_silently(self):
+        resp = self.client.post('/product/contact/', data=self.VALID_WITH_BOT)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], '/product/contact/thank-you/')
+
+    def test_honeypot_trip_does_not_save_submission(self):
+        self.client.post('/product/contact/', data=self.VALID_WITH_BOT)
+        self.assertEqual(FeedbackSubmission.objects.count(), 0)
+
+
+from django.core import mail
+from django.test import override_settings
+
+from server.feedback import send_feedback_email
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class SendFeedbackEmailTests(TestCase):
+    def setUp(self):
+        self.submission = FeedbackSubmission.objects.create(
+            first_name='Jane', last_name='Doe',
+            email='jane@example.com', phone='+1-555-0100',
+            category='bug', message='Found a bug',
+        )
+
+    def test_noop_when_to_blank(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = ''
+        s.feedback_email_from = 'noreply@example.com'
+        s.save()
+        send_feedback_email(self.submission, s)
+        self.assertEqual(len(mail.outbox), 0)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.email_delivered_at)
+
+    def test_noop_when_from_blank(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com'
+        s.feedback_email_from = ''
+        s.save()
+        send_feedback_email(self.submission, s)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_sends_when_both_configured(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com,dest2@example.com'
+        s.feedback_email_from = 'noreply@example.com'
+        s.save()
+        send_feedback_email(self.submission, s)
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertEqual(msg.to, ['dest@example.com', 'dest2@example.com'])
+        self.assertEqual(msg.from_email, 'noreply@example.com')
+        self.assertIn('Bug report', msg.subject)
+        self.assertIn('Jane', msg.subject)
+        self.assertIn('Found a bug', msg.body)
+        self.assertIn('jane@example.com', msg.body)
+        self.submission.refresh_from_db()
+        self.assertIsNotNone(self.submission.email_delivered_at)
+
+    def test_failure_appends_delivery_note(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com'
+        s.feedback_email_from = 'noreply@example.com'
+        s.save()
+        from unittest.mock import patch
+        with patch('server.feedback.send_mail', side_effect=Exception('SMTP down')):
+            send_feedback_email(self.submission, s)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.email_delivered_at)
+        self.assertIn('SMTP down', self.submission.delivery_notes)
+
+
+import json
+from unittest.mock import patch, MagicMock
+
+from server.feedback import post_to_webhook
+
+
+class PostToWebhookTests(TestCase):
+    def setUp(self):
+        self.submission = FeedbackSubmission.objects.create(
+            first_name='Jane', last_name='Doe',
+            email='jane@example.com', phone='+1-555',
+            category='bug', message='m',
+        )
+
+    def test_noop_when_url_blank(self):
+        s = SiteSettings.get()
+        s.webhook_url = ''
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen') as u:
+            post_to_webhook(self.submission, s)
+            u.assert_not_called()
+
+    def test_posts_json_payload_on_configured_url(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/r/123'
+        s.save()
+
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            post_to_webhook(self.submission, s)
+            u.assert_called_once()
+            req = u.call_args[0][0]
+            self.assertEqual(req.full_url, 'https://hooks.example.com/r/123')
+            self.assertEqual(req.get_method(), 'POST')
+            self.assertEqual(req.headers['Content-type'], 'application/json')
+            payload = json.loads(req.data)
+            self.assertEqual(payload['email'], 'jane@example.com')
+            self.assertEqual(payload['category'], 'bug')
+            self.assertEqual(payload['category_label'], 'Bug report')
+            self.assertEqual(payload['source'], 'product-registry')
+            self.assertEqual(payload['submission_id'], self.submission.pk)
+
+        self.submission.refresh_from_db()
+        self.assertIsNotNone(self.submission.webhook_delivered_at)
+
+    def test_failure_appends_delivery_note(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/r/123'
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('timeout')):
+            post_to_webhook(self.submission, s)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.webhook_delivered_at)
+        self.assertIn('timeout', self.submission.delivery_notes)
+
+    def test_non_2xx_status_recorded_as_failure(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/r/123'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 500
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            post_to_webhook(self.submission, s)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.webhook_delivered_at)
+        self.assertIn('500', self.submission.delivery_notes)
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class ContactEndToEndDeliveryTests(TestCase):
+    VALID = {
+        'first_name': 'Jane',
+        'last_name': 'Doe',
+        'email': 'jane@example.com',
+        'phone': '+1-555',
+        'category': 'bug',
+        'message': 'msg',
+        'website': '',
+    }
+
+    def setUp(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com'
+        s.feedback_email_from = 'noreply@example.com'
+        s.webhook_url = 'https://hooks.example.com/r/abc'
+        s.save()
+
+    def test_post_fires_email_and_webhook(self):
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        u.assert_called_once()
+        row = FeedbackSubmission.objects.get()
+        self.assertIsNotNone(row.email_delivered_at)
+        self.assertIsNotNone(row.webhook_delivered_at)
+
+    def test_webhook_failure_does_not_break_email(self):
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('net down')):
+            resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        row = FeedbackSubmission.objects.get()
+        self.assertIsNotNone(row.email_delivered_at)
+        self.assertIsNone(row.webhook_delivered_at)
+
+    def test_email_failure_does_not_break_webhook(self):
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.send_mail', side_effect=Exception('smtp down')), \
+             patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        row = FeedbackSubmission.objects.get()
+        self.assertIsNone(row.email_delivered_at)
+        self.assertIsNotNone(row.webhook_delivered_at)
+
+
+from server.feedback import send_test_webhook
+
+
+class SendTestWebhookTests(TestCase):
+    def test_noop_when_url_blank(self):
+        s = SiteSettings.get()
+        s.webhook_url = ''
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen') as u:
+            ok, detail = send_test_webhook(s)
+            u.assert_not_called()
+        self.assertFalse(ok)
+        self.assertIn('No webhook URL', detail)
+
+    def test_success_returns_ok_and_status(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            ok, detail = send_test_webhook(s)
+            u.assert_called_once()
+            req = u.call_args[0][0]
+            payload = json.loads(req.data)
+            self.assertTrue(payload['is_test'])
+            self.assertIsNone(payload['submission_id'])
+            self.assertEqual(payload['email'], 'test@example.com')
+            self.assertEqual(payload['source'], 'product-registry')
+        self.assertTrue(ok)
+        self.assertIn('200', detail)
+
+    def test_non_2xx_returns_not_ok(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 500
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            ok, detail = send_test_webhook(s)
+        self.assertFalse(ok)
+        self.assertIn('500', detail)
+
+    def test_exception_returns_not_ok(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('connection refused')):
+            ok, detail = send_test_webhook(s)
+        self.assertFalse(ok)
+        self.assertIn('connection refused', detail)
+
+    def test_does_not_create_submission(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            send_test_webhook(s)
+        self.assertEqual(FeedbackSubmission.objects.count(), 0)
+
+
+class AdminSendTestWebhookViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.admin = User.objects.create_superuser(
+            username='admin2', password='pw', email='a2@example.com',
+        )
+
+    def setUp(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+
+    def test_get_is_rejected(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/sitesettings/send-test-webhook/')
+        self.assertEqual(resp.status_code, 405)
+
+    def test_post_calls_helper_and_redirects(self):
+        self.client.force_login(self.admin)
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            resp = self.client.post('/admin/server/sitesettings/send-test-webhook/')
+            u.assert_called_once()
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], '/admin/server/sitesettings/1/change/')
+
+    def test_post_shows_error_message_on_failure(self):
+        self.client.force_login(self.admin)
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('boom')):
+            resp = self.client.post(
+                '/admin/server/sitesettings/send-test-webhook/', follow=True,
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'boom')
+
+    def test_button_present_on_change_form(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/sitesettings/1/change/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Send test webhook event')
+        self.assertContains(resp, '/admin/server/sitesettings/send-test-webhook/')
+
+    def test_anonymous_user_cannot_trigger(self):
+        resp = self.client.post('/admin/server/sitesettings/send-test-webhook/')
+        # Admin redirects to login for anonymous users
+        self.assertIn(resp.status_code, (302, 403))

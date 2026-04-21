@@ -1026,3 +1026,77 @@ class ProdInstruction(models.Model):
 
 class Tag(models.Model):
     Value = models.CharField(blank=True, max_length=500)
+
+
+class FeedbackSubmission(models.Model):
+    class Category(models.TextChoices):
+        QUESTION = 'question', _('Question')
+        BUG = 'bug', _('Bug report')
+        SUGGESTION = 'suggestion', _('Suggestion')
+        OTHER = 'other', _('Other')
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30, blank=True)
+    category = models.CharField(
+        max_length=20, choices=Category.choices, default=Category.QUESTION
+    )
+    message = models.TextField(max_length=5000)
+
+    source_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, blank=True)
+
+    email_delivered_at = models.DateTimeField(null=True, blank=True)
+    webhook_delivered_at = models.DateTimeField(null=True, blank=True)
+    delivery_notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_category_display()} from {self.email} at {self.created_at:%Y-%m-%d %H:%M}'
+
+
+class SiteSettings(models.Model):
+    feedback_email_to = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text='Comma-separated recipient email addresses. Blank = do not send email.',
+    )
+    feedback_email_from = models.EmailField(
+        blank=True,
+        help_text='From address. Must be verified in AWS SES.',
+    )
+    webhook_url = models.URLField(
+        max_length=500,
+        blank=True,
+        help_text=(
+            'Webhook URL for forwarding submissions. Any HTTP endpoint '
+            '(Workato recipe, Zapier, n8n, custom service). Blank = do not post.'
+        ),
+    )
+    rate_limit_per_hour = models.PositiveIntegerField(
+        default=3,
+        help_text='Max submissions per IP per hour. 0 = disabled.',
+    )
+
+    class Meta:
+        verbose_name = 'Site settings'
+        verbose_name_plural = 'Site settings'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        return  # singleton: never deletable
+
+    @classmethod
+    def get(cls):
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return 'Site settings'
