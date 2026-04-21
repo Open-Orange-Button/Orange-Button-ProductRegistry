@@ -83,16 +83,16 @@ def _append_note(submission, text):
     submission.save(update_fields=['delivery_notes'])
 
 
-WORKATO_TIMEOUT = 10
+WEBHOOK_TIMEOUT = 10
 
 
-def post_to_workato(submission, settings_row):
-    """POST the submission as JSON to Workato webhook. Best-effort.
+def post_to_webhook(submission, settings_row):
+    """POST the submission as JSON to the configured webhook URL. Best-effort.
 
     Stamps webhook_delivered_at on 2xx, appends to delivery_notes on failure.
     Never raises.
     """
-    url = (settings_row.workato_webhook_url or '').strip()
+    url = (settings_row.webhook_url or '').strip()
     if not url:
         return
 
@@ -108,6 +108,11 @@ def post_to_workato(submission, settings_row):
         'source': 'product-registry',
         'submission_id': submission.pk,
     }
+    _post_json(url, payload, submission)
+
+
+def _post_json(url, payload, submission):
+    """Do the HTTP POST. Stamps submission.webhook_delivered_at on 2xx."""
     body = json.dumps(payload).encode('utf-8')
     req = urllib.request.Request(
         url,
@@ -117,18 +122,16 @@ def post_to_workato(submission, settings_row):
     )
 
     try:
-        with urllib.request.urlopen(
-            req, timeout=WORKATO_TIMEOUT,
-        ) as response:
+        with urllib.request.urlopen(req, timeout=WEBHOOK_TIMEOUT) as response:
             status = response.status
             if 200 <= status < 300:
                 submission.webhook_delivered_at = timezone.now()
                 submission.save(update_fields=['webhook_delivered_at'])
             else:
-                logger.warning('Workato webhook returned %s for submission %s',
+                logger.warning('Webhook returned %s for submission %s',
                                status, submission.pk)
                 _append_note(submission, f'webhook failed: HTTP {status}')
     except Exception as exc:
-        logger.warning('Workato webhook call failed for submission %s: %s',
+        logger.warning('Webhook call failed for submission %s: %s',
                        submission.pk, exc)
         _append_note(submission, f'webhook failed: {exc}')

@@ -66,17 +66,17 @@ Enums use Django TextChoices: `{ItemTypeName}Enum`, `{ItemTypeName}Unit`.
 Public form linked from the "Contact Us" button in the navbar (every page).
 
 **Code layout:**
-- `server/feedback.py` — `ContactForm` + `send_feedback_email()` + `post_to_workato()` (stdlib `urllib.request`, no new deps)
+- `server/feedback.py` — `ContactForm` + `send_feedback_email()` + `post_to_webhook()` (stdlib `urllib.request`, no new deps)
 - `server/views.py` — `contact` + `contact_thank_you` views; helpers `_client_ip` (validates XFF, falls back to `REMOTE_ADDR`), `_mask_email`, `_rate_limit_exceeded`
 - `server/models.py` — `FeedbackSubmission` (every submission saved) + `SiteSettings` (singleton, `pk=1`, destination config)
 - Templates: `contact.html`, `contact_thank_you.html`; button in `base.html`
 
-**Flow:** POST → validate → honeypot check → rate-limit check → save row → best-effort email + Workato webhook → 302 to thank-you. DB row is canonical; delivery failures are logged in `delivery_notes` but never surface to the user.
+**Flow:** POST → validate → honeypot check → rate-limit check → save row → best-effort email + webhook POST → 302 to thank-you. DB row is canonical; delivery failures are logged in `delivery_notes` but never surface to the user.
 
 **Configuring destinations** — Django admin → "Site settings" (singleton, auto-redirects to `pk=1`):
 - `feedback_email_to` — comma-separated recipients (blank = no email)
 - `feedback_email_from` — must be verified in SES for prod
-- `workato_webhook_url` — Workato recipe webhook URL (blank = no webhook)
+- `webhook_url` — any HTTP endpoint (Workato recipe, Zapier, n8n, custom) that receives POSTed JSON (blank = no webhook)
 - `rate_limit_per_hour` — default 3, `0` disables
 
 **Reviewing submissions** — Django admin → "Feedback submissions" (read-only). `email_delivered_at` / `webhook_delivered_at` show per-destination success; `delivery_notes` holds failure reasons.

@@ -2,7 +2,7 @@ begin transaction;
 -- NOTE: server_feedbacksubmission and server_sitesettings are intentionally
 -- NOT copied from local -> prod. Both are prod-only:
 --   * server_sitesettings holds admin-editable production config
---     (feedback email recipients, Workato webhook URL). Copying from local
+--     (feedback email recipients, webhook URL). Copying from local
 --     would wipe prod config.
 --   * server_feedbacksubmission holds real user submissions; local is test data.
 insert into rds.server_product select * from lds.server_product;

@@ -1068,10 +1068,13 @@ class SiteSettings(models.Model):
         blank=True,
         help_text='From address. Must be verified in AWS SES.',
     )
-    workato_webhook_url = models.URLField(
+    webhook_url = models.URLField(
         max_length=500,
         blank=True,
-        help_text='Workato recipe webhook URL. Blank = do not post to Workato.',
+        help_text=(
+            'Webhook URL for forwarding submissions. Any HTTP endpoint '
+            '(Workato recipe, Zapier, n8n, custom service). Blank = do not post.'
+        ),
     )
     rate_limit_per_hour = models.PositiveIntegerField(
         default=3,
