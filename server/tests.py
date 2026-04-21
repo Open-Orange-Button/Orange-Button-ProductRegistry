@@ -96,3 +96,61 @@ class AdminRegistrationTests(TestCase):
         SiteSettings.get()  # ensure row exists
         resp = self.client.get('/admin/server/sitesettings/1/change/')
         self.assertEqual(resp.status_code, 200)
+
+
+from server.feedback import ContactForm
+
+
+class ContactFormTests(TestCase):
+    VALID = {
+        'first_name': 'Jane',
+        'last_name': 'Doe',
+        'email': 'jane@example.com',
+        'phone': '+1-555-0100',
+        'category': 'question',
+        'message': 'Hello there.',
+        'website': '',
+    }
+
+    def test_valid_form(self):
+        form = ContactForm(data=self.VALID)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_email_is_required(self):
+        data = dict(self.VALID, email='')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_message_is_required(self):
+        data = dict(self.VALID, message='')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('message', form.errors)
+
+    def test_names_and_phone_are_optional(self):
+        data = dict(self.VALID, first_name='', last_name='', phone='')
+        form = ContactForm(data=data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_email_must_be_valid(self):
+        data = dict(self.VALID, email='not-an-email')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_category_must_be_in_choices(self):
+        data = dict(self.VALID, category='bogus')
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('category', form.errors)
+
+    def test_message_max_length_5000(self):
+        data = dict(self.VALID, message='x' * 5001)
+        form = ContactForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('message', form.errors)
+
+    def test_honeypot_field_present(self):
+        form = ContactForm()
+        self.assertIn('website', form.fields)
