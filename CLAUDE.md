@@ -101,6 +101,8 @@ DJANGO_SUPERUSER_PASSWORD=... uv run python manage.py createsuperuser --noinput
 
 **Data reload caveat:** `load_local_db_to_remote_db.sql` explicitly excludes `server_feedbacksubmission` and `server_sitesettings` — both are prod-only, copying from local would wipe production config/submissions.
 
+**Operator setup guide:** `.docs/CONTACT_FORM_OPS.md` — SES verification, SMTP credentials, superuser creation on prod via one-off Fargate tasks, admin destination config, end-to-end verification, and troubleshooting.
+
 **Tests:** `server/tests.py` — Django `TestCase`s. Run with `uv run python manage.py test server`.
 
 ## URL Routes
