@@ -322,3 +322,66 @@ class HoneypotTests(TestCase):
     def test_honeypot_trip_does_not_save_submission(self):
         self.client.post('/product/contact/', data=self.VALID_WITH_BOT)
         self.assertEqual(FeedbackSubmission.objects.count(), 0)
+
+
+from django.core import mail
+from django.test import override_settings
+
+from server.feedback import send_feedback_email
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class SendFeedbackEmailTests(TestCase):
+    def setUp(self):
+        self.submission = FeedbackSubmission.objects.create(
+            first_name='Jane', last_name='Doe',
+            email='jane@example.com', phone='+1-555-0100',
+            category='bug', message='Found a bug',
+        )
+
+    def test_noop_when_to_blank(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = ''
+        s.feedback_email_from = 'noreply@example.com'
+        s.save()
+        send_feedback_email(self.submission, s)
+        self.assertEqual(len(mail.outbox), 0)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.email_delivered_at)
+
+    def test_noop_when_from_blank(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com'
+        s.feedback_email_from = ''
+        s.save()
+        send_feedback_email(self.submission, s)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_sends_when_both_configured(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com,dest2@example.com'
+        s.feedback_email_from = 'noreply@example.com'
+        s.save()
+        send_feedback_email(self.submission, s)
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertEqual(msg.to, ['dest@example.com', 'dest2@example.com'])
+        self.assertEqual(msg.from_email, 'noreply@example.com')
+        self.assertIn('Bug report', msg.subject)
+        self.assertIn('Jane', msg.subject)
+        self.assertIn('Found a bug', msg.body)
+        self.assertIn('jane@example.com', msg.body)
+        self.submission.refresh_from_db()
+        self.assertIsNotNone(self.submission.email_delivered_at)
+
+    def test_failure_appends_delivery_note(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com'
+        s.feedback_email_from = 'noreply@example.com'
+        s.save()
+        from unittest.mock import patch
+        with patch('server.feedback.send_mail', side_effect=Exception('SMTP down')):
+            send_feedback_email(self.submission, s)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.email_delivered_at)
+        self.assertIn('SMTP down', self.submission.delivery_notes)
