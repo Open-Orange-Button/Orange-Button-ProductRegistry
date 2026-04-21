@@ -135,3 +135,43 @@ def _post_json(url, payload, submission):
         logger.warning('Webhook call failed for submission %s: %s',
                        submission.pk, exc)
         _append_note(submission, f'webhook failed: {exc}')
+
+
+def send_test_webhook(settings_row):
+    """POST a synthetic test event to the configured webhook URL.
+
+    Does not touch the DB. Returns (ok: bool, detail: str) so callers
+    (admin action) can render a success or failure message.
+    """
+    url = (settings_row.webhook_url or '').strip()
+    if not url:
+        return False, 'No webhook URL is configured.'
+
+    payload = {
+        'submitted_at': timezone.now().isoformat(),
+        'first_name': 'Test',
+        'last_name': 'User',
+        'email': 'test@example.com',
+        'phone': '',
+        'category': 'other',
+        'category_label': 'Other',
+        'message': 'This is a test event sent from the Product Registry admin.',
+        'source': 'product-registry',
+        'submission_id': None,
+        'is_test': True,
+    }
+    body = json.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(
+        url,
+        data=body,
+        method='POST',
+        headers={'Content-type': 'application/json'},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=WEBHOOK_TIMEOUT) as response:
+            status = response.status
+            if 200 <= status < 300:
+                return True, f'Webhook responded with HTTP {status}.'
+            return False, f'Webhook responded with HTTP {status}.'
+    except Exception as exc:
+        return False, f'Webhook call failed: {exc}'

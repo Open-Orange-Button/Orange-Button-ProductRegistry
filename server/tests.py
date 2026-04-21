@@ -565,3 +565,122 @@ class ContactEndToEndDeliveryTests(TestCase):
         row = FeedbackSubmission.objects.get()
         self.assertIsNone(row.email_delivered_at)
         self.assertIsNotNone(row.webhook_delivered_at)
+
+
+from server.feedback import send_test_webhook
+
+
+class SendTestWebhookTests(TestCase):
+    def test_noop_when_url_blank(self):
+        s = SiteSettings.get()
+        s.webhook_url = ''
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen') as u:
+            ok, detail = send_test_webhook(s)
+            u.assert_not_called()
+        self.assertFalse(ok)
+        self.assertIn('No webhook URL', detail)
+
+    def test_success_returns_ok_and_status(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            ok, detail = send_test_webhook(s)
+            u.assert_called_once()
+            req = u.call_args[0][0]
+            payload = json.loads(req.data)
+            self.assertTrue(payload['is_test'])
+            self.assertIsNone(payload['submission_id'])
+            self.assertEqual(payload['email'], 'test@example.com')
+            self.assertEqual(payload['source'], 'product-registry')
+        self.assertTrue(ok)
+        self.assertIn('200', detail)
+
+    def test_non_2xx_returns_not_ok(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 500
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            ok, detail = send_test_webhook(s)
+        self.assertFalse(ok)
+        self.assertIn('500', detail)
+
+    def test_exception_returns_not_ok(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('connection refused')):
+            ok, detail = send_test_webhook(s)
+        self.assertFalse(ok)
+        self.assertIn('connection refused', detail)
+
+    def test_does_not_create_submission(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            send_test_webhook(s)
+        self.assertEqual(FeedbackSubmission.objects.count(), 0)
+
+
+class AdminSendTestWebhookViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.admin = User.objects.create_superuser(
+            username='admin2', password='pw', email='a2@example.com',
+        )
+
+    def setUp(self):
+        s = SiteSettings.get()
+        s.webhook_url = 'https://hooks.example.com/test'
+        s.save()
+
+    def test_get_is_rejected(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/sitesettings/send-test-webhook/')
+        self.assertEqual(resp.status_code, 405)
+
+    def test_post_calls_helper_and_redirects(self):
+        self.client.force_login(self.admin)
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            resp = self.client.post('/admin/server/sitesettings/send-test-webhook/')
+            u.assert_called_once()
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], '/admin/server/sitesettings/1/change/')
+
+    def test_post_shows_error_message_on_failure(self):
+        self.client.force_login(self.admin)
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('boom')):
+            resp = self.client.post(
+                '/admin/server/sitesettings/send-test-webhook/', follow=True,
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'boom')
+
+    def test_button_present_on_change_form(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/sitesettings/1/change/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Send test webhook event')
+        self.assertContains(resp, '/admin/server/sitesettings/send-test-webhook/')
+
+    def test_anonymous_user_cannot_trigger(self):
+        resp = self.client.post('/admin/server/sitesettings/send-test-webhook/')
+        # Admin redirects to login for anonymous users
+        self.assertIn(resp.status_code, (302, 403))
