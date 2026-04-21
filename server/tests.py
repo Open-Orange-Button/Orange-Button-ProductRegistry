@@ -156,6 +156,73 @@ class ContactFormTests(TestCase):
         self.assertIn('website', form.fields)
 
 
+from datetime import timedelta
+from django.utils import timezone
+
+
+class RateLimitTests(TestCase):
+    VALID = {
+        'first_name': 'X',
+        'last_name': 'Y',
+        'email': 'x@example.com',
+        'phone': '',
+        'category': 'question',
+        'message': 'hi',
+        'website': '',
+    }
+
+    def setUp(self):
+        self.ip = '203.0.113.99'
+        self.settings_row = SiteSettings.get()
+        self.settings_row.rate_limit_per_hour = 3
+        self.settings_row.save()
+
+    def _post(self):
+        return self.client.post('/product/contact/', data=self.VALID, REMOTE_ADDR=self.ip)
+
+    def test_under_limit_allowed(self):
+        for _ in range(3):
+            resp = self._post()
+            self.assertEqual(resp.status_code, 302)
+        self.assertEqual(FeedbackSubmission.objects.count(), 3)
+
+    def test_over_limit_blocked_and_not_saved(self):
+        for _ in range(3):
+            self._post()
+        resp = self._post()
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Too many submissions')
+        self.assertEqual(FeedbackSubmission.objects.count(), 3)
+
+    def test_limit_counts_only_last_hour(self):
+        for _ in range(3):
+            row = FeedbackSubmission.objects.create(
+                email='old@example.com', message='old',
+                source_ip=self.ip,
+            )
+            FeedbackSubmission.objects.filter(pk=row.pk).update(
+                created_at=timezone.now() - timedelta(hours=2)
+            )
+        resp = self._post()
+        self.assertEqual(resp.status_code, 302)
+
+    def test_zero_disables_rate_limit(self):
+        self.settings_row.rate_limit_per_hour = 0
+        self.settings_row.save()
+        for _ in range(10):
+            resp = self._post()
+            self.assertEqual(resp.status_code, 302)
+        self.assertEqual(FeedbackSubmission.objects.count(), 10)
+
+    def test_other_ip_not_rate_limited(self):
+        for _ in range(3):
+            self._post()
+        resp = self.client.post(
+            '/product/contact/', data=self.VALID, REMOTE_ADDR='203.0.113.100'
+        )
+        self.assertEqual(resp.status_code, 302)
+
+
 from django.urls import reverse
 
 
