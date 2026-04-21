@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from server.models import FeedbackSubmission, SiteSettings
@@ -70,3 +71,28 @@ class SiteSettingsModelTests(TestCase):
         self.assertEqual(s.feedback_email_from, '')
         self.assertEqual(s.workato_webhook_url, '')
         self.assertEqual(s.rate_limit_per_hour, 3)
+
+
+class AdminRegistrationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.admin = User.objects.create_superuser(
+            username='admin', password='pw', email='admin@example.com'
+        )
+
+    def test_feedbacksubmission_admin_changelist_accessible(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/feedbacksubmission/')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_sitesettings_admin_redirects_to_singleton(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/admin/server/sitesettings/', follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+    def test_sitesettings_change_page_uses_pk_1(self):
+        self.client.force_login(self.admin)
+        SiteSettings.get()  # ensure row exists
+        resp = self.client.get('/admin/server/sitesettings/1/change/')
+        self.assertEqual(resp.status_code, 200)
