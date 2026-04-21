@@ -1,0 +1,99 @@
+{% extends "server/base.html" %}
+
+{% block title %}Contact Us - Product Registry{% endblock %}
+
+{% block main %}
+<div class="container" style="max-width: 640px;">
+    <div class="row mt-4">
+        <div class="col-12">
+            <h1>Get in touch</h1>
+            <p class="text-muted">
+                Have a question, bug report, or suggestion?
+                Fill out the form and we'll get back to you.
+            </p>
+
+            <form method="POST" action="{% url 'product:contact' %}" novalidate>
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_first_name" class="form-label">First name</label>
+                        <input type="text" name="first_name" id="id_first_name"
+                               value="{{ form.first_name.value|default_if_none:"" }}"
+                               class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                               maxlength="100">
+                        {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_last_name" class="form-label">Last name</label>
+                        <input type="text" name="last_name" id="id_last_name"
+                               value="{{ form.last_name.value|default_if_none:"" }}"
+                               class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                               maxlength="100">
+                        {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_email" class="form-label">
+                        Email <span class="text-danger">*</span>
+                    </label>
+                    <input type="email" name="email" id="id_email" required
+                           value="{{ form.email.value|default_if_none:"" }}"
+                           class="form-control {% if form.email.errors %}is-invalid{% endif %}">
+                    {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_phone" class="form-label">Phone</label>
+                    <input type="tel" name="phone" id="id_phone"
+                           value="{{ form.phone.value|default_if_none:"" }}"
+                           class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                           maxlength="30">
+                    {% for e in form.phone.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_category" class="form-label">
+                        Category <span class="text-danger">*</span>
+                    </label>
+                    <select name="category" id="id_category" required
+                            class="form-select {% if form.category.errors %}is-invalid{% endif %}">
+                        {% for value, label in form.fields.category.choices %}
+                        <option value="{{ value }}"
+                            {% if form.category.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% for e in form.category.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_message" class="form-label">
+                        Message <span class="text-danger">*</span>
+                    </label>
+                    <textarea name="message" id="id_message" rows="6" required maxlength="5000"
+                              class="form-control {% if form.message.errors %}is-invalid{% endif %}">{{ form.message.value|default_if_none:"" }}</textarea>
+                    {% for e in form.message.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                </div>
+
+                {# Honeypot: hidden from humans, filled only by bots. #}
+                <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+                    <label for="id_website">Website</label>
+                    <input type="text" name="website" id="id_website"
+                           tabindex="-1" autocomplete="off">
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Send message</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
