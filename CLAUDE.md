@@ -62,14 +62,56 @@ reverse OneToOne relations.
 All model fields follow `FieldName_Value` and `FieldName_Unit` pattern.
 Enums use Django TextChoices: `{ItemTypeName}Enum`, `{ItemTypeName}Unit`.
 
+### Contact / Feedback Form
+Public form linked from the "Contact Us" button in the navbar (every page).
+
+**Code layout:**
+- `server/feedback.py` — `ContactForm` + `send_feedback_email()` + `post_to_workato()` (stdlib `urllib.request`, no new deps)
+- `server/views.py` — `contact` + `contact_thank_you` views; helpers `_client_ip` (validates XFF, falls back to `REMOTE_ADDR`), `_mask_email`, `_rate_limit_exceeded`
+- `server/models.py` — `FeedbackSubmission` (every submission saved) + `SiteSettings` (singleton, `pk=1`, destination config)
+- Templates: `contact.html`, `contact_thank_you.html`; button in `base.html`
+
+**Flow:** POST → validate → honeypot check → rate-limit check → save row → best-effort email + Workato webhook → 302 to thank-you. DB row is canonical; delivery failures are logged in `delivery_notes` but never surface to the user.
+
+**Configuring destinations** — Django admin → "Site settings" (singleton, auto-redirects to `pk=1`):
+- `feedback_email_to` — comma-separated recipients (blank = no email)
+- `feedback_email_from` — must be verified in SES for prod
+- `workato_webhook_url` — Workato recipe webhook URL (blank = no webhook)
+- `rate_limit_per_hour` — default 3, `0` disables
+
+**Reviewing submissions** — Django admin → "Feedback submissions" (read-only). `email_delivered_at` / `webhook_delivered_at` show per-destination success; `delivery_notes` holds failure reasons.
+
+**Spam protection:** hidden honeypot (`website` field) silently drops bot submissions; per-IP rate limit backed by DB.
+
+**Email backend (env-driven, `product_registry/settings.py`):**
+- No `EMAIL_HOST` env var → console backend (local dev; emails print to runserver terminal)
+- `EMAIL_HOST` set → SMTP (AWS SES SMTP in prod)
+- Env vars: `EMAIL_HOST`, `EMAIL_PORT` (default 587), `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` (default `1`)
+
+**Superuser creation** (one-off, required for admin access):
+```bash
+# Local:
+uv run python manage.py createsuperuser
+# Non-interactive (good for prod via ECS exec/bastion):
+DJANGO_SUPERUSER_USERNAME=admin DJANGO_SUPERUSER_EMAIL=ops@example.com \
+DJANGO_SUPERUSER_PASSWORD=... uv run python manage.py createsuperuser --noinput
+```
+
+**Data reload caveat:** `load_local_db_to_remote_db.sql` explicitly excludes `server_feedbacksubmission` and `server_sitesettings` — both are prod-only, copying from local would wipe production config/submissions.
+
+**Tests:** `server/tests.py` — Django `TestCase`s. Run with `uv run python manage.py test server`.
+
 ## URL Routes
 | Route | View | Description |
 |-------|------|-------------|
 | `/product/` | `product_list` | Searchable product list |
-| `/product/domestic-content/` | `domestic_content` | US domestic content table |
+| `/product/us-domestic-content/` | `product_list_us_domestic` | US domestic content table |
+| `/product/contact/` | `contact` | Public contact / feedback form |
+| `/product/contact/thank-you/` | `contact_thank_you` | Form submission confirmation |
 | `/product/<uuid>/` | `product_detail_by_ProdID` | Product detail page |
 | `/product/<uuid>/json` | `product_json` | JSON export (file download) |
 | `/product/<slug>/` | `product_detail_by_ProdCode` | Redirect to detail by code |
+| `/admin/` | Django admin | Site settings + feedback submissions |
 
 ## Running Locally
 ```bash
@@ -95,6 +137,7 @@ When schema changes require a full data reload:
 
 ## Important Notes
 - `terraform/terraform.tfvars` is gitignored (contains DB passwords)
-- `admin.py` is empty — no models registered in Django admin
+- Django admin (`server/admin.py`) registers `FeedbackSubmission` (read-only) and `SiteSettings` (singleton); product models are not in admin
 - No CI/CD pipeline — Docker build and deploy is manual
 - The `upsert_utils.py` helper uses DuckDB for bulk inserts (bypasses Django ORM)
+- Design docs for new features live under `docs/superpowers/specs/` and plans under `docs/superpowers/plans/`
