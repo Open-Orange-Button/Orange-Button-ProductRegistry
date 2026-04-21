@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('server', '0006_remove_comment_contacts_remove_entity_contacts_and_more'),
+        ('server', '0007_add_cec_prod_code'),
     ]
 
     operations = [

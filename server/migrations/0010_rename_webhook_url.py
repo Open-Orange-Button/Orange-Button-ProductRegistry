@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('server', '0008_sitesettings'),
+        ('server', '0009_sitesettings'),
     ]
 
     operations = [
