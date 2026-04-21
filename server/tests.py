@@ -179,3 +179,18 @@ class ContactThankYouViewTests(TestCase):
         resp = self.client.get('/product/contact/thank-you/')
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Thanks, we got your message')
+
+
+class ContactButtonTests(TestCase):
+    def test_button_present_on_product_list(self):
+        resp = self.client.get('/product/')
+        self.assertContains(resp, 'Contact Us')
+        self.assertContains(resp, 'href="/product/contact/"')
+
+    def test_button_present_on_us_domestic(self):
+        resp = self.client.get('/product/us-domestic-content/')
+        self.assertContains(resp, 'Contact Us')
+
+    def test_button_present_on_contact_page_itself(self):
+        resp = self.client.get('/product/contact/')
+        self.assertContains(resp, 'Contact Us')
