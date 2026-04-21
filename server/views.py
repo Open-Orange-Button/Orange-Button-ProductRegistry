@@ -7,7 +7,8 @@ import itertools
 import logging
 
 from django.core import paginator
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.validators import validate_ipv46_address
 import django.db.models
 from django.db.models import Q
 import django.template
@@ -17,6 +18,7 @@ from django.utils import timezone
 
 import ob_taxonomy.models as ob_models
 import server.models as models
+from server.feedback import ContactForm, send_feedback_email, post_to_workato
 
 logger = logging.getLogger(__name__)
 
@@ -219,14 +221,17 @@ def product_list_us_domestic(request):
     )
 
 
-from server.feedback import ContactForm, send_feedback_email, post_to_workato
-
-
 def _client_ip(request):
     xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
-    if xff:
-        return xff.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR')
+    candidate = xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
+    if not candidate:
+        return None
+    try:
+        validate_ipv46_address(candidate)
+    except ValidationError:
+        # XFF can be spoofed by clients; fall back to the peer Django controls.
+        return request.META.get('REMOTE_ADDR')
+    return candidate
 
 
 def _mask_email(addr):

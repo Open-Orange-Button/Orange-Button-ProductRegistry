@@ -160,6 +160,59 @@ from datetime import timedelta
 from django.utils import timezone
 
 
+class ClientIPValidationTests(TestCase):
+    VALID = {
+        'first_name': 'X',
+        'last_name': 'Y',
+        'email': 'x@example.com',
+        'phone': '',
+        'category': 'question',
+        'message': 'hi',
+        'website': '',
+    }
+
+    def setUp(self):
+        s = SiteSettings.get()
+        s.rate_limit_per_hour = 2
+        s.save()
+
+    def test_bogus_xff_cannot_bypass_rate_limit(self):
+        # A bot rotating fake XFF values should still get rate-limited
+        # because _client_ip falls back to REMOTE_ADDR when XFF is invalid.
+        for bogus in ['not-an-ip', 'attacker-1', 'foo-bar']:
+            resp = self.client.post(
+                '/product/contact/',
+                data=self.VALID,
+                REMOTE_ADDR='198.51.100.1',
+                HTTP_X_FORWARDED_FOR=bogus,
+            )
+        # After 3 requests with 2/hr limit, the 3rd should have been blocked.
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Too many submissions')
+        # Only the first two got saved; the third was rate-limited.
+        self.assertEqual(FeedbackSubmission.objects.count(), 2)
+
+    def test_invalid_xff_stored_as_remote_addr(self):
+        self.client.post(
+            '/product/contact/',
+            data=self.VALID,
+            REMOTE_ADDR='198.51.100.1',
+            HTTP_X_FORWARDED_FOR='definitely-not-an-ip',
+        )
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.source_ip, '198.51.100.1')
+
+    def test_valid_xff_is_used(self):
+        self.client.post(
+            '/product/contact/',
+            data=self.VALID,
+            REMOTE_ADDR='10.0.0.1',
+            HTTP_X_FORWARDED_FOR='203.0.113.5',
+        )
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.source_ip, '203.0.113.5')
+
+
 class RateLimitTests(TestCase):
     VALID = {
         'first_name': 'X',
