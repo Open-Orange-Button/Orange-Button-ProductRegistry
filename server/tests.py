@@ -385,3 +385,75 @@ class SendFeedbackEmailTests(TestCase):
         self.submission.refresh_from_db()
         self.assertIsNone(self.submission.email_delivered_at)
         self.assertIn('SMTP down', self.submission.delivery_notes)
+
+
+import json
+from unittest.mock import patch, MagicMock
+
+from server.feedback import post_to_workato
+
+
+class PostToWorkatoTests(TestCase):
+    def setUp(self):
+        self.submission = FeedbackSubmission.objects.create(
+            first_name='Jane', last_name='Doe',
+            email='jane@example.com', phone='+1-555',
+            category='bug', message='m',
+        )
+
+    def test_noop_when_url_blank(self):
+        s = SiteSettings.get()
+        s.workato_webhook_url = ''
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen') as u:
+            post_to_workato(self.submission, s)
+            u.assert_not_called()
+
+    def test_posts_json_payload_on_configured_url(self):
+        s = SiteSettings.get()
+        s.workato_webhook_url = 'https://hooks.example.com/r/123'
+        s.save()
+
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            post_to_workato(self.submission, s)
+            u.assert_called_once()
+            req = u.call_args[0][0]
+            self.assertEqual(req.full_url, 'https://hooks.example.com/r/123')
+            self.assertEqual(req.get_method(), 'POST')
+            self.assertEqual(req.headers['Content-type'], 'application/json')
+            payload = json.loads(req.data)
+            self.assertEqual(payload['email'], 'jane@example.com')
+            self.assertEqual(payload['category'], 'bug')
+            self.assertEqual(payload['category_label'], 'Bug report')
+            self.assertEqual(payload['source'], 'product-registry')
+            self.assertEqual(payload['submission_id'], self.submission.pk)
+
+        self.submission.refresh_from_db()
+        self.assertIsNotNone(self.submission.webhook_delivered_at)
+
+    def test_failure_appends_delivery_note(self):
+        s = SiteSettings.get()
+        s.workato_webhook_url = 'https://hooks.example.com/r/123'
+        s.save()
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('timeout')):
+            post_to_workato(self.submission, s)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.webhook_delivered_at)
+        self.assertIn('timeout', self.submission.delivery_notes)
+
+    def test_non_2xx_status_recorded_as_failure(self):
+        s = SiteSettings.get()
+        s.workato_webhook_url = 'https://hooks.example.com/r/123'
+        s.save()
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 500
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            post_to_workato(self.submission, s)
+        self.submission.refresh_from_db()
+        self.assertIsNone(self.submission.webhook_delivered_at)
+        self.assertIn('500', self.submission.delivery_notes)
