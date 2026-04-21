@@ -234,3 +234,24 @@ class ContactPostTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(FeedbackSubmission.objects.count(), 0)
         self.assertContains(resp, 'Get in touch')
+
+
+class HoneypotTests(TestCase):
+    VALID_WITH_BOT = {
+        'first_name': '',
+        'last_name': '',
+        'email': 'bot@example.com',
+        'phone': '',
+        'category': 'question',
+        'message': 'spam',
+        'website': 'http://bot-filled-this.example.com',
+    }
+
+    def test_honeypot_trip_redirects_to_thank_you_silently(self):
+        resp = self.client.post('/product/contact/', data=self.VALID_WITH_BOT)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], '/product/contact/thank-you/')
+
+    def test_honeypot_trip_does_not_save_submission(self):
+        self.client.post('/product/contact/', data=self.VALID_WITH_BOT)
+        self.assertEqual(FeedbackSubmission.objects.count(), 0)

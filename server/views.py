@@ -241,6 +241,13 @@ def contact(request):
         form = ContactForm(data=request.POST)
         if form.is_valid():
             cd = form.cleaned_data
+            if cd.get('website'):
+                logger.info(
+                    'contact honeypot tripped ip=%s user_agent=%r',
+                    _client_ip(request),
+                    request.META.get('HTTP_USER_AGENT', '')[:200],
+                )
+                return HttpResponseRedirect(reverse('product:contact-thank-you'))
             submission = models.FeedbackSubmission.objects.create(
                 first_name=cd['first_name'],
                 last_name=cd['last_name'],
