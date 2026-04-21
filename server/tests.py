@@ -457,3 +457,58 @@ class PostToWorkatoTests(TestCase):
         self.submission.refresh_from_db()
         self.assertIsNone(self.submission.webhook_delivered_at)
         self.assertIn('500', self.submission.delivery_notes)
+
+
+@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class ContactEndToEndDeliveryTests(TestCase):
+    VALID = {
+        'first_name': 'Jane',
+        'last_name': 'Doe',
+        'email': 'jane@example.com',
+        'phone': '+1-555',
+        'category': 'bug',
+        'message': 'msg',
+        'website': '',
+    }
+
+    def setUp(self):
+        s = SiteSettings.get()
+        s.feedback_email_to = 'dest@example.com'
+        s.feedback_email_from = 'noreply@example.com'
+        s.workato_webhook_url = 'https://hooks.example.com/r/abc'
+        s.save()
+
+    def test_post_fires_email_and_webhook(self):
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response) as u:
+            resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        u.assert_called_once()
+        row = FeedbackSubmission.objects.get()
+        self.assertIsNotNone(row.email_delivered_at)
+        self.assertIsNotNone(row.webhook_delivered_at)
+
+    def test_webhook_failure_does_not_break_email(self):
+        with patch('server.feedback.urllib.request.urlopen',
+                   side_effect=Exception('net down')):
+            resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        row = FeedbackSubmission.objects.get()
+        self.assertIsNotNone(row.email_delivered_at)
+        self.assertIsNone(row.webhook_delivered_at)
+
+    def test_email_failure_does_not_break_webhook(self):
+        fake_response = MagicMock()
+        fake_response.__enter__.return_value.status = 200
+        with patch('server.feedback.send_mail', side_effect=Exception('smtp down')), \
+             patch('server.feedback.urllib.request.urlopen',
+                   return_value=fake_response):
+            resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        row = FeedbackSubmission.objects.get()
+        self.assertIsNone(row.email_delivered_at)
+        self.assertIsNotNone(row.webhook_delivered_at)

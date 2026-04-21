@@ -219,7 +219,7 @@ def product_list_us_domestic(request):
     )
 
 
-from server.feedback import ContactForm
+from server.feedback import ContactForm, send_feedback_email, post_to_workato
 
 
 def _client_ip(request):
@@ -282,6 +282,10 @@ def contact(request):
                 'contact submission saved id=%s category=%s email=%s',
                 submission.pk, submission.category, _mask_email(submission.email),
             )
+
+            send_feedback_email(submission, settings_row)
+            post_to_workato(submission, settings_row)
+
             return HttpResponseRedirect(reverse('product:contact-thank-you'))
     else:
         form = ContactForm()
