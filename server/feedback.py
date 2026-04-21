@@ -1,4 +1,6 @@
+import json
 import logging
+import urllib.request
 
 from django import forms
 from django.core.mail import send_mail
@@ -81,12 +83,7 @@ def _append_note(submission, text):
     submission.save(update_fields=['delivery_notes'])
 
 
-import json
-import urllib.request
-
-
-WORKATO_CONNECT_TIMEOUT = 5
-WORKATO_READ_TIMEOUT = 10
+WORKATO_TIMEOUT = 10
 
 
 def post_to_workato(submission, settings_row):
@@ -121,7 +118,7 @@ def post_to_workato(submission, settings_row):
 
     try:
         with urllib.request.urlopen(
-            req, timeout=WORKATO_READ_TIMEOUT,
+            req, timeout=WORKATO_TIMEOUT,
         ) as response:
             status = response.status
             if 200 <= status < 300:
