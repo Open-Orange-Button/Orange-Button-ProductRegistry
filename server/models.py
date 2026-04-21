@@ -644,6 +644,7 @@ class Product(models.Model):
     Description_Value = models.CharField(blank=True, max_length=500)
     FileFolderURL_Value = models.URLField(blank=True)
     ManufacturerUPC_Value = models.CharField(blank=True, max_length=500)
+    CECProdCode_Value = models.CharField(blank=True, max_length=100, db_index=True)
     ProdCode_Value = models.CharField(blank=True, null=True, max_length=50, unique=True, editable=False, db_index=True)
     ProdDatasheetURL_Value = models.URLField(blank=True)
     ProdID_Value = models.UUIDField(unique=True, editable=False, db_index=True, default=uuid.uuid4)

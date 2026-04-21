@@ -8,7 +8,7 @@ resource "aws_security_group" "bastion_sg" {
     protocol    = "tcp"
     from_port   = 22
     to_port     = 22
-    cidr_blocks = ["<your_IP>/32"] # Replace with your actual public IP
+    cidr_blocks = ["217.160.75.101/32"]
   }
 
   egress {
