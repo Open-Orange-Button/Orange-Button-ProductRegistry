@@ -212,3 +212,15 @@ def product_list_us_domestic(request):
             page_products=paginator.Paginator(products, 20).get_page(request.GET.get('page'))
         )
     )
+
+
+from server.feedback import ContactForm
+
+
+def contact(request):
+    form = ContactForm()
+    return render(request, 'server/contact.html', context={'form': form})
+
+
+def contact_thank_you(request):
+    return render(request, 'server/contact_thank_you.html')
