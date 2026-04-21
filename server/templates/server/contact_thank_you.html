@@ -1,0 +1,20 @@
+{% extends 'server/base.html' %}
+
+{% block title %}Message received - Product Registry{% endblock %}
+
+{% block main %}
+<div class='container' style='max-width: 640px;'>
+    <div class='row mt-4'>
+        <div class='col-12'>
+            <div class='alert alert-success'>
+                <h4 class='alert-heading'>Thanks, we got your message.</h4>
+                <p class='mb-2'>
+                    We'll reply to the email address you provided. In the meantime,
+                    feel free to keep browsing the product registry.
+                </p>
+                <a href="{% url 'product:list' %}" class='btn btn-primary btn-sm'>Back to products</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
