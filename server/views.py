@@ -1,6 +1,7 @@
 import ast
 from collections import defaultdict
 import datetime
+from datetime import timedelta
 from functools import partial
 import itertools
 import logging
@@ -12,6 +13,7 @@ from django.db.models import Q
 import django.template
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, reverse
+from django.utils import timezone
 
 import ob_taxonomy.models as ob_models
 import server.models as models
@@ -236,6 +238,16 @@ def _mask_email(addr):
     return f'{local[0]}***@{domain}'
 
 
+def _rate_limit_exceeded(ip, limit):
+    if not limit or not ip:
+        return False
+    since = timezone.now() - timedelta(hours=1)
+    count = models.FeedbackSubmission.objects.filter(
+        source_ip=ip, created_at__gte=since
+    ).count()
+    return count >= limit
+
+
 def contact(request):
     if request.method == 'POST':
         form = ContactForm(data=request.POST)
@@ -248,6 +260,14 @@ def contact(request):
                     request.META.get('HTTP_USER_AGENT', '')[:200],
                 )
                 return HttpResponseRedirect(reverse('product:contact-thank-you'))
+
+            ip = _client_ip(request)
+            settings_row = models.SiteSettings.get()
+            if _rate_limit_exceeded(ip, settings_row.rate_limit_per_hour):
+                logger.info('contact rate-limit tripped ip=%s', ip)
+                form.add_error(None, 'Too many submissions — please try again later.')
+                return render(request, 'server/contact.html', context={'form': form})
+
             submission = models.FeedbackSubmission.objects.create(
                 first_name=cd['first_name'],
                 last_name=cd['last_name'],
@@ -255,7 +275,7 @@ def contact(request):
                 phone=cd['phone'],
                 category=cd['category'],
                 message=cd['message'],
-                source_ip=_client_ip(request),
+                source_ip=ip,
                 user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
             )
             logger.info(
