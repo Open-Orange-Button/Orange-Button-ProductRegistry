@@ -194,3 +194,43 @@ class ContactButtonTests(TestCase):
     def test_button_present_on_contact_page_itself(self):
         resp = self.client.get('/product/contact/')
         self.assertContains(resp, 'Contact Us')
+
+
+class ContactPostTests(TestCase):
+    VALID = {
+        'first_name': 'Jane',
+        'last_name': 'Doe',
+        'email': 'jane@example.com',
+        'phone': '+1-555-0100',
+        'category': 'question',
+        'message': 'Hello there.',
+        'website': '',
+    }
+
+    def test_valid_post_creates_submission(self):
+        resp = self.client.post('/product/contact/', data=self.VALID)
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp['Location'], '/product/contact/thank-you/')
+        self.assertEqual(FeedbackSubmission.objects.count(), 1)
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.email, 'jane@example.com')
+        self.assertEqual(row.category, 'question')
+        self.assertEqual(row.message, 'Hello there.')
+
+    def test_valid_post_captures_source_ip_and_user_agent(self):
+        self.client.post(
+            '/product/contact/',
+            data=self.VALID,
+            REMOTE_ADDR='198.51.100.42',
+            HTTP_USER_AGENT='TestAgent/1.0',
+        )
+        row = FeedbackSubmission.objects.get()
+        self.assertEqual(row.source_ip, '198.51.100.42')
+        self.assertEqual(row.user_agent, 'TestAgent/1.0')
+
+    def test_invalid_post_rerenders_form_no_row_saved(self):
+        data = dict(self.VALID, email='')
+        resp = self.client.post('/product/contact/', data=data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(FeedbackSubmission.objects.count(), 0)
+        self.assertContains(resp, 'Get in touch')

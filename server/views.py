@@ -3,6 +3,7 @@ from collections import defaultdict
 import datetime
 from functools import partial
 import itertools
+import logging
 
 from django.core import paginator
 from django.core.exceptions import ObjectDoesNotExist
@@ -14,6 +15,8 @@ from django.shortcuts import get_object_or_404, render, reverse
 
 import ob_taxonomy.models as ob_models
 import server.models as models
+
+logger = logging.getLogger(__name__)
 
 
 GROUP_NAMES = ('elements', 'nested_objects', 'element_arrays', 'object_arrays')
@@ -217,8 +220,44 @@ def product_list_us_domestic(request):
 from server.feedback import ContactForm
 
 
+def _client_ip(request):
+    xff = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def _mask_email(addr):
+    if not addr or '@' not in addr:
+        return addr or ''
+    local, _, domain = addr.partition('@')
+    if not local:
+        return addr
+    return f'{local[0]}***@{domain}'
+
+
 def contact(request):
-    form = ContactForm()
+    if request.method == 'POST':
+        form = ContactForm(data=request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            submission = models.FeedbackSubmission.objects.create(
+                first_name=cd['first_name'],
+                last_name=cd['last_name'],
+                email=cd['email'],
+                phone=cd['phone'],
+                category=cd['category'],
+                message=cd['message'],
+                source_ip=_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
+            logger.info(
+                'contact submission saved id=%s category=%s email=%s',
+                submission.pk, submission.category, _mask_email(submission.email),
+            )
+            return HttpResponseRedirect(reverse('product:contact-thank-you'))
+    else:
+        form = ContactForm()
     return render(request, 'server/contact.html', context={'form': form})
 
 
