@@ -77,6 +77,8 @@ Public form linked from the "Contact Us" button in the navbar (every page).
 - `feedback_email_to` — comma-separated recipients (blank = no email)
 - `feedback_email_from` — must be verified in SES for prod
 - `webhook_url` — any HTTP endpoint (Workato recipe, Zapier, n8n, custom) that receives POSTed JSON (blank = no webhook)
+
+The SiteSettings change page also has a **Send test webhook event** button. It POSTs a synthetic payload (`is_test: true`, `submission_id: null`) to the configured URL without creating a `FeedbackSubmission` row. Result (HTTP status or exception) is shown inline via Django admin messages. Useful for verifying a new recipe before real submissions hit it.
 - `rate_limit_per_hour` — default 3, `0` disables
 
 **Reviewing submissions** — Django admin → "Feedback submissions" (read-only). `email_delivered_at` / `webhook_delivered_at` show per-destination success; `delivery_notes` holds failure reasons.
