@@ -31,6 +31,21 @@ ALLOWED_HOSTS += [h for h in os.environ.get('ADDITIONAL_ALLOWED_HOSTS', '').spli
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ['*']
 
+# CSRF trusted origins (Django 4+ requires explicit https:// origins for
+# POST requests). Set CSRF_TRUSTED_ORIGINS env var to a comma-separated list
+# of scheme+host URLs (e.g. "https://productregistry.oballiance.org").
+# Falls back to deriving https:// origins from ALLOWED_HOSTS.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        f'https://{h}' for h in ALLOWED_HOSTS
+        if h and h != '*' and not h.startswith('.')
+        and not h.replace('.', '').isdigit()  # skip bare IPs
+    ]
+
 
 # Application definition
 
