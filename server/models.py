@@ -1026,3 +1026,34 @@ class ProdInstruction(models.Model):
 
 class Tag(models.Model):
     Value = models.CharField(blank=True, max_length=500)
+
+
+class FeedbackSubmission(models.Model):
+    class Category(models.TextChoices):
+        QUESTION = 'question', _('Question')
+        BUG = 'bug', _('Bug report')
+        SUGGESTION = 'suggestion', _('Suggestion')
+        OTHER = 'other', _('Other')
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30, blank=True)
+    category = models.CharField(
+        max_length=20, choices=Category.choices, default=Category.QUESTION
+    )
+    message = models.TextField(max_length=5000)
+
+    source_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, blank=True)
+
+    email_delivered_at = models.DateTimeField(null=True, blank=True)
+    webhook_delivered_at = models.DateTimeField(null=True, blank=True)
+    delivery_notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.get_category_display()} from {self.email} at {self.created_at:%Y-%m-%d %H:%M}'
